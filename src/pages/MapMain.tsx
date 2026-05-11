@@ -10,13 +10,8 @@ function MapMain() {
   const mapContainer = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const apiKey = import.meta.env.VITE_KAKAO_MAP_KEY
-
-    const script = document.createElement('script')
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`
-    script.async = true
-
-    script.onload = () => { // 지도 생성
+    console.log('kakao:', window.kakao)
+    const initMap = () => {
       window.kakao.maps.load(() => {
         const options = {
           center: new window.kakao.maps.LatLng(36.5, 127.5),
@@ -26,10 +21,18 @@ function MapMain() {
       })
     }
 
-    document.head.appendChild(script)
+    if (window.kakao) {
+      initMap()
+    } else {
+      const script = document.querySelector(
+        'script[src*="dapi.kakao.com"]'
+      ) as HTMLScriptElement
+      script.addEventListener('load', initMap)
+    }
   }, [])
 
   return (
+    
     <div style={{ width: '100%', height: '100vh', background: '#0a0a0f' }}>
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
     </div>

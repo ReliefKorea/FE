@@ -25,7 +25,7 @@ export default function Landing() {
       <header style={styles.header}>
         <div style={styles.logo}>
           <div style={styles.logoIcon}>⊕</div>
-          <span style={styles.logoText}>재난지도</span>
+          <span style={styles.logoText}>Relief Korea</span>
         </div>
         <div style={styles.headerRight}>
           <div style={styles.statusBadge}>
@@ -52,9 +52,8 @@ export default function Landing() {
           <div style={styles.orbRing} />
           <div style={styles.orbInner}>
             <div style={styles.orbSubtitle}>STRATEGIC DISASTER INTELLIGENCE</div>
-            <h1 style={styles.orbTitle}>
-              재난지도<br />
-              <span style={styles.orbTitleAccent}>ALERTS</span>
+            <h1 style={{ ...styles.orbTitle, fontSize: 52 }}>
+              Relief Korea
             </h1>
             <p style={styles.orbDesc}>
               지금 발생한 재난과 현재 필요한<br />

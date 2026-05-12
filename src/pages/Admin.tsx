@@ -33,7 +33,7 @@ export default function Admin() {
         <div style={s.headerLeft}>
           <div style={s.logo} onClick={() => navigate('/')}>
             <span style={s.logoIcon}>⊕</span>
-            <span style={s.logoText}>재난지도</span>
+            <span style={s.logoText}>Relief Korea</span>
           </div>
           <nav style={s.navTabs}>
             <button style={s.navTab} onClick={() => navigate('/map')}>🗺️ Live Map</button>
@@ -263,7 +263,7 @@ export default function Admin() {
       )}
 
       <footer style={s.footer}>
-        <span style={{ color: '#334155', fontSize: 11 }}>© 2024 재난지도. Real-time KMA Integration active.</span>
+        <span style={{ color: '#334155', fontSize: 11 }}>© 2024 Relief Korea. Real-time KMA Integration active.</span>
         <span style={s.footerLink}>상세 가이드라인 확인</span>
       </footer>
     </div>

@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { mockEvents, disasterTypeLabels, disasterTypeIcons, severityConfig, statusConfig } from '../data/mockData'
 import type { RiskEvent, DisasterType } from '../types'
 
-declare global {
-  interface Window { kakao: any }
-}
+// leaflet 기본 아이콘 경로 문제 해결
+delete (L.Icon.Default.prototype as Record<string, unknown>)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
 
 const CATEGORIES: { key: DisasterType | 'all'; label: string; icon: string }[] = [
   { key: 'all',        label: 'All Alerts', icon: '🏠' },
@@ -16,12 +24,28 @@ const CATEGORIES: { key: DisasterType | 'all'; label: string; icon: string }[] =
   { key: 'earthquake', label: 'Earthquakes',icon: '⚡' },
 ]
 
+function makeIcon(event: RiskEvent) {
+  const cfg = severityConfig[event.severity]
+  const icon = disasterTypeIcons[event.disaster_type] ?? '⚠️'
+  const html = `
+    <div style="position:relative;width:40px;height:40px;">
+      <div style="
+        position:absolute;inset:-4px;border-radius:50%;
+        background:${cfg.dotColor};opacity:0.3;
+        animation:pulseMarker 2s ease-in-out infinite;
+      "></div>
+      <div style="
+        position:relative;width:40px;height:40px;border-radius:50%;
+        background:${cfg.bgColor};border:2px solid ${cfg.dotColor};
+        display:flex;align-items:center;justify-content:center;
+        font-size:18px;box-shadow:0 0 12px ${cfg.dotColor}88;
+      ">${icon}</div>
+    </div>`
+  return L.divIcon({ html, className: '', iconSize: [40, 40], iconAnchor: [20, 20] })
+}
+
 export default function MapMain() {
   const navigate = useNavigate()
-  const mapContainer = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<any>(null)
-  const markersRef = useRef<any[]>([])
-
   const [activeCategory, setActiveCategory] = useState<DisasterType | 'all'>('all')
   const [selectedEvent, setSelectedEvent] = useState<RiskEvent | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -34,81 +58,43 @@ export default function MapMain() {
     return matchCat && matchSearch
   })
 
-  // 지도 초기화
-  useEffect(() => {
-    const initMap = () => {
-      window.kakao.maps.load(() => {
-        if (!mapContainer.current) return
-        const map = new window.kakao.maps.Map(mapContainer.current, {
-          center: new window.kakao.maps.LatLng(36.5, 127.8),
-          level: 8,
-        })
-        mapRef.current = map
-        renderMarkers(map, mockEvents)
-      })
-    }
-    if (window.kakao) initMap()
-    else {
-      const script = document.querySelector('script[src*="dapi.kakao.com"]') as HTMLScriptElement
-      if (script) script.addEventListener('load', initMap)
-    }
-  }, [])
-
-  // 필터 변경 시 마커 갱신
-  useEffect(() => {
-    if (mapRef.current) renderMarkers(mapRef.current, filteredEvents)
-  }, [filteredEvents.length, activeCategory, searchQuery])
-
-  function renderMarkers(map: any, events: RiskEvent[]) {
-    markersRef.current.forEach(m => m.setMap(null))
-    markersRef.current = []
-
-    events.forEach(event => {
-      const cfg = severityConfig[event.severity]
-      const content = `
-        <div style="position:relative;cursor:pointer;">
-          <div style="
-            position:absolute;inset:0;border-radius:50%;
-            background:${cfg.dotColor};opacity:0.4;
-            animation:pulseMarker 2s ease-in-out infinite;
-          "></div>
-          <div style="
-            position:relative;width:36px;height:36px;border-radius:50%;
-            background:${cfg.bgColor};border:2px solid ${cfg.dotColor};
-            display:flex;align-items:center;justify-content:center;
-            font-size:16px;box-shadow:0 0 12px ${cfg.dotColor}55;
-          ">${disasterTypeIcons[event.disaster_type] ?? '⚠️'}</div>
-        </div>`
-
-      const marker = new window.kakao.maps.CustomOverlay({
-        position: new window.kakao.maps.LatLng(event.center_lat, event.center_lng),
-        content,
-        zIndex: event.severity === 'critical' ? 10 : 5,
-      })
-      marker.setMap(map)
-
-      // 클릭 이벤트는 DOM에 직접
-      setTimeout(() => {
-        const el = marker.getContent()
-        if (el && typeof el !== 'string') {
-          el.addEventListener('click', () => setSelectedEvent(event))
-        }
-      }, 100)
-
-      markersRef.current.push(marker)
-    })
-  }
-
   const activeCount = mockEvents.filter(e => e.status === 'active').length
 
   return (
     <div style={s.root}>
+      <style>{`
+        @keyframes pulseMarker {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(1.5); opacity: 0.1; }
+        }
+        .leaflet-container { background: #0d1117; }
+        .leaflet-popup-content-wrapper {
+          background: #111827;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          color: #e2e8f0;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .leaflet-popup-tip { background: #111827; }
+        .leaflet-popup-close-button { color: #64748b !important; }
+        .leaflet-control-zoom a {
+          background: #0d1117 !important;
+          color: #94a3b8 !important;
+          border-color: rgba(255,255,255,0.1) !important;
+        }
+        .leaflet-control-attribution {
+          background: rgba(13,17,23,0.8) !important;
+          color: #475569 !important;
+        }
+        .leaflet-control-attribution a { color: #64748b !important; }
+      `}</style>
+
       {/* 상단 헤더 */}
       <header style={s.header}>
         <div style={s.headerLeft}>
           <div style={s.logo} onClick={() => navigate('/')}>
             <span style={s.logoIcon}>⊕</span>
-            <span style={s.logoText}>재난지도</span>
+            <span style={s.logoText}>Relief Korea</span>
           </div>
           <nav style={s.navTabs}>
             <button style={{ ...s.navTab, ...s.navTabActive }}>🗺️ Live Map</button>
@@ -131,10 +117,7 @@ export default function MapMain() {
           {CATEGORIES.map(cat => (
             <button
               key={cat.key}
-              style={{
-                ...s.catItem,
-                ...(activeCategory === cat.key ? s.catItemActive : {}),
-              }}
+              style={{ ...s.catItem, ...(activeCategory === cat.key ? s.catItemActive : {}) }}
               onClick={() => setActiveCategory(cat.key)}
             >
               <span style={s.catIcon}>{cat.icon}</span>
@@ -145,10 +128,6 @@ export default function MapMain() {
 
           <div style={s.sidebarDivider} />
 
-          <button style={s.catItem} onClick={() => navigate('/map')}>
-            <span style={s.catIcon}>🗺️</span>
-            <span>Map View</span>
-          </button>
           <button style={s.catItem}>
             <span style={s.catIcon}>ℹ️</span>
             <span>Emergency Guide</span>
@@ -165,19 +144,60 @@ export default function MapMain() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
-            <button style={s.myRegionBtn}>📍 My Region</button>
-            <button style={s.filterBtn}>⚡</button>
+            <button style={s.filterBtn}>🔧 필터</button>
           </div>
 
-          {/* 카카오 지도 */}
-          <div ref={mapContainer} style={s.map} />
+          {/* Leaflet 지도 */}
+          <MapContainer
+            center={[36.5, 127.8]}
+            zoom={7}
+            style={{ flex: 1, width: '100%' }}
+            zoomControl
+          >
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+              subdomains="abcd"
+              maxZoom={19}
+            />
+            {filteredEvents.map(event => (
+              <Marker
+                key={event.event_id}
+                position={[event.center_lat, event.center_lng]}
+                icon={makeIcon(event)}
+                eventHandlers={{ click: () => setSelectedEvent(event) }}
+              >
+                <Popup>
+                  <div style={{ minWidth: 200 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: '#e2e8f0' }}>
+                      {disasterTypeIcons[event.disaster_type]} {event.title}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>
+                      📍 {event.region_name} · {disasterTypeLabels[event.disaster_type]}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
+                      {event.official_summary.slice(0, 60)}...
+                    </div>
+                    <button
+                      onClick={() => navigate(`/event/${event.event_id}`)}
+                      style={{ marginTop: 8, width: '100%', background: '#16a34a', border: 'none', borderRadius: 6, padding: '6px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      상세 보기 →
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
 
-          {/* 하단 상태 바 */}
+          {/* 하단 범례 */}
           <div style={s.bottomBar}>
-            <div style={s.legendItem}><span style={{ ...s.legendDot, background: '#c084fc' }} />CRITICAL</div>
-            <div style={s.legendItem}><span style={{ ...s.legendDot, background: '#f87171' }} />HIGH</div>
-            <div style={s.legendItem}><span style={{ ...s.legendDot, background: '#fb923c' }} />MODERATE</div>
-            <div style={s.legendItem}><span style={{ ...s.legendDot, background: '#facc15' }} />LOW</div>
+            {Object.entries(severityConfig).reverse().map(([key, cfg]) => (
+              <div key={key} style={s.legendItem}>
+                <span style={{ ...s.legendDot, background: cfg.dotColor, boxShadow: `0 0 5px ${cfg.dotColor}` }} />
+                {cfg.label}
+              </div>
+            ))}
             <div style={s.legendSep} />
             <div style={s.legendItem}>
               <span style={{ ...s.legendDot, background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
@@ -186,7 +206,7 @@ export default function MapMain() {
           </div>
         </div>
 
-        {/* 우측 패널 - 사건 선택 시 표시 */}
+        {/* 우측 패널 */}
         {selectedEvent ? (
           <EventPanel event={selectedEvent} onClose={() => setSelectedEvent(null)} navigate={navigate} />
         ) : (
@@ -197,7 +217,6 @@ export default function MapMain() {
   )
 }
 
-// 우측: 알림 목록 패널
 function AlertListPanel({ events, onSelect }: { events: RiskEvent[]; onSelect: (e: RiskEvent) => void }) {
   return (
     <aside style={s.rightPanel}>
@@ -233,53 +252,77 @@ function AlertListPanel({ events, onSelect }: { events: RiskEvent[]; onSelect: (
   )
 }
 
-// 우측: 사건 상세 패널
-function EventPanel({ event, onClose, navigate }: { event: RiskEvent; onClose: () => void; navigate: any }) {
+function EventPanel({ event, onClose, navigate }: { event: RiskEvent; onClose: () => void; navigate: NavigateFunction }) {
   const cfg = severityConfig[event.severity]
+  const startDate = new Date(event.started_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+  const hasDonation = event.help_status === 'donation_available' || event.help_status === 'both_available'
+  const hasVolunteer = event.help_status === 'volunteer_available' || event.help_status === 'both_available'
+
   return (
     <aside style={s.rightPanel}>
-      <div style={s.panelHeader}>
-        <span style={s.panelBadgeGreen}>LIVE REGION FOCUS</span>
+      {/* 헤더 */}
+      <div style={s.epHeader}>
+        <div>
+          <div style={s.epRegion}>
+            <span style={{ color: '#818cf8', marginRight: 6 }}>📍</span>
+            {event.region_name}
+          </div>
+          <div style={s.epSubtitle}>1건의 재난 사건</div>
+        </div>
         <button onClick={onClose} style={s.closeBtn}>✕</button>
       </div>
 
-      <div style={{ padding: '0 16px 16px', overflowY: 'auto' as const, flex: 1 }}>
-        <div style={s.regionTitle}>
-          <span style={{ color: '#4ade80', marginRight: 6 }}>✈</span>
-          {event.region_name}
-        </div>
+      {/* 사건 카드 */}
+      <div style={{ padding: '16px', overflowY: 'auto' as const, flex: 1 }}>
+        <div style={s.epCard}>
+          {/* 사건 제목 */}
+          <div style={s.epTitle}>{event.title}</div>
 
-        <div style={s.regionStats}>
-          <div style={s.statRow}>
-            <span style={s.statLabel}>Active Alerts</span>
-            <span style={{ ...s.statValue, color: cfg.color }}>1</span>
+          {/* 배지 */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
+            <span style={{ ...s.epBadge, background: cfg.bgColor, color: cfg.color, border: `1px solid ${cfg.color}66` }}>
+              위험도: {cfg.label}
+            </span>
+            <span style={{ ...s.epBadge, background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
+              {disasterTypeLabels[event.disaster_type] ?? event.disaster_type}
+            </span>
           </div>
-          <div style={s.statRow}>
-            <span style={s.statLabel}>Risk Level</span>
-            <span style={{ ...s.statValue, color: cfg.color }}>{cfg.label.toUpperCase()}</span>
-          </div>
-          <div style={{ height: 4, background: '#1e293b', borderRadius: 2, marginTop: 6 }}>
-            <div style={{
-              height: '100%', borderRadius: 2, background: cfg.color,
-              width: event.severity === 'critical' ? '100%' : event.severity === 'high' ? '75%' : event.severity === 'medium' ? '50%' : '25%',
-              transition: 'width 0.5s',
-            }} />
-          </div>
-        </div>
 
-        <div style={s.ongoingLabel}>ONGOING INCIDENTS</div>
-        <div style={s.incidentRow} onClick={() => navigate(`/event/${event.event_id}`)}>
-          <span style={{ fontSize: 18 }}>{disasterTypeIcons[event.disaster_type]}</span>
-          <div style={{ flex: 1 }}>
-            <div style={s.incidentTitle}>{event.title}</div>
-            <div style={s.incidentSub}>{event.official_summary.slice(0, 40)}...</div>
+          {/* 발생일 */}
+          <div style={s.epRow}>
+            <span style={s.epRowIcon}>🗓</span>
+            <span style={s.epRowLabel}>발생:</span>
+            <span style={s.epRowValue}>{startDate}</span>
           </div>
-          <span style={{ color: '#475569' }}>›</span>
-        </div>
 
-        <button style={s.emergencyBtn} onClick={() => navigate(`/event/${event.event_id}`)}>
-          🛡️ &nbsp; 상세 정보 및 후원 보기
-        </button>
+          {/* 상황 */}
+          <div style={s.epRow}>
+            <span style={s.epRowIcon}>ℹ️</span>
+            <span style={s.epRowText}>{event.official_summary}</span>
+          </div>
+
+          {/* 후원/봉사 가능 여부 */}
+          {(hasDonation || hasVolunteer) && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+              {hasDonation && (
+                <span style={s.epHelpBadge}>후원 가능</span>
+              )}
+              {hasVolunteer && (
+                <span style={{ ...s.epHelpBadge, background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
+                  봉사 가능
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* 자세히 보기 */}
+          <button
+            style={s.epDetailBtn}
+            onClick={() => navigate(`/event/${event.event_id}`)}
+          >
+            자세히 보기 →
+          </button>
+        </div>
       </div>
     </aside>
   )
@@ -308,11 +351,9 @@ const s: Record<string, React.CSSProperties> = {
   catIcon: { fontSize: 16, width: 20, textAlign: 'center' },
   sidebarDivider: { height: 1, background: 'rgba(255,255,255,0.06)', margin: '12px 16px' },
   mapWrapper: { flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' },
-  searchBar: { position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 15, display: 'flex', gap: 8, width: '60%', minWidth: 340 },
+  searchBar: { position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, display: 'flex', gap: 8, width: '60%', minWidth: 340 },
   searchInput: { flex: 1, background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 16px', color: '#e2e8f0', fontSize: 13, outline: 'none', backdropFilter: 'blur(12px)' },
-  myRegionBtn: { background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', backdropFilter: 'blur(12px)' },
-  filterBtn: { background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 14px', color: '#94a3b8', fontSize: 14, cursor: 'pointer', backdropFilter: 'blur(12px)' },
-  map: { flex: 1, width: '100%' },
+  filterBtn: { background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', backdropFilter: 'blur(12px)' },
   bottomBar: { height: 40, background: 'rgba(13,17,23,0.95)', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 20, padding: '0 20px', flexShrink: 0, zIndex: 5 },
   legendItem: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#64748b', letterSpacing: 0.5 },
   legendDot: { width: 8, height: 8, borderRadius: '50%', display: 'inline-block' },
@@ -339,4 +380,18 @@ const s: Record<string, React.CSSProperties> = {
   incidentTitle: { fontSize: 13, fontWeight: 600, color: '#e2e8f0' },
   incidentSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
   emergencyBtn: { width: '100%', background: '#16a34a', border: 'none', borderRadius: 8, padding: '12px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', letterSpacing: 0.3 },
+
+  epHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.07)' },
+  epRegion: { fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 },
+  epSubtitle: { fontSize: 12, color: '#64748b' },
+  epCard: { background: '#1a2236', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '16px' },
+  epTitle: { fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 10, lineHeight: 1.4 },
+  epBadge: { fontSize: 11, padding: '3px 9px', borderRadius: 20, fontWeight: 600 },
+  epRow: { display: 'flex', alignItems: 'flex-start', gap: 6, marginTop: 10, fontSize: 12 },
+  epRowIcon: { fontSize: 13, flexShrink: 0, marginTop: 1 },
+  epRowLabel: { color: '#64748b', flexShrink: 0 },
+  epRowValue: { color: '#94a3b8' },
+  epRowText: { color: '#94a3b8', lineHeight: 1.6 },
+  epHelpBadge: { fontSize: 12, padding: '4px 10px', borderRadius: 20, background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)', fontWeight: 600 },
+  epDetailBtn: { marginTop: 14, background: 'none', border: 'none', color: '#818cf8', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 },
 }

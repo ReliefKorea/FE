@@ -17,7 +17,6 @@ export default function Landing() {
 
   return (
     <div style={styles.root}>
-      {/* 배경 그라디언트 */}
       <div style={styles.bgGlow1} />
       <div style={styles.bgGlow2} />
 
@@ -71,7 +70,6 @@ export default function Landing() {
         </div>
       </main>
 
-      {/* 하단 상태 바 */}
       <footer style={styles.footer}>
         <div style={styles.footerLeft}>
           <div style={styles.alertBadge}>
@@ -79,24 +77,8 @@ export default function Landing() {
             <span>{activeCount} Active Incidents Detected</span>
           </div>
         </div>
-        <div style={styles.footerRight}>
-          <span style={styles.footerRegion}>KR</span>
-          <span style={styles.footerMetaText}>EMERGENCY RESPONSE PROTOCOL V2.4</span>
-          <span style={styles.footerMetaDot}>·</span>
-          <span style={styles.footerMetaText}>KMA DATA SYNCED</span>
-          <span style={styles.footerMetaDot}>·</span>
-          <span style={styles.footerMetaText}>INTELLIGENCE NODE: ACTIVE</span>
-        </div>
       </footer>
 
-      {/* 좌하단 배지 */}
-      <div style={styles.sideLeftBadge}>
-        <div style={styles.sideIcon}>🛰️</div>
-        <div>
-          <div style={{ fontSize: 10, color: '#64748b', letterSpacing: 1 }}>ACTIVE SURVEILLANCE</div>
-          <div style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>KR-GEO-STATION 4</div>
-        </div>
-      </div>
     </div>
   )
 }

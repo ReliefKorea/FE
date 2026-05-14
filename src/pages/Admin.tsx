@@ -263,7 +263,7 @@ export default function Admin() {
       )}
 
       <footer style={s.footer}>
-        <span style={{ color: '#334155', fontSize: 11 }}>© 2024 Relief Korea. Real-time KMA Integration active.</span>
+        <span style={{ color: '#334155', fontSize: 11 }}>© 2026 Relief Korea.</span>
         <span style={s.footerLink}>상세 가이드라인 확인</span>
       </footer>
     </div>

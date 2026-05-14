@@ -157,62 +157,48 @@ export default function EventDetail() {
           )}
         </div>
 
-        {/* 우측: 긴급 연락처 + 후원 */}
+        {/* 우측: 후원 */}
         <div style={s.colRight}>
-          {/* 긴급 연락처 */}
-          <div style={s.emergencyCard}>
-            <div style={s.cardLabel}>⚡ Quick Emergency</div>
-            <div style={s.emergencyBtns}>
-              <div style={s.emergencyCall}>
-                <div style={s.emergencyCallLabel}>FIRE / RESCUE</div>
-                <div style={s.emergencyCallNum}>119</div>
-              </div>
-              <div style={{ ...s.emergencyCall, background: 'rgba(79,70,229,0.15)', border: '1px solid rgba(79,70,229,0.3)' }}>
-                <div style={s.emergencyCallLabel}>POLICE</div>
-                <div style={{ ...s.emergencyCallNum, color: '#818cf8' }}>112</div>
-              </div>
-            </div>
-          </div>
-
-          {/* 후원 단체 */}
-          {orgs.length > 0 && (
-            <div style={s.supportSection}>
-              <div style={s.cardLabel}>♡ Support Relief</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {orgs.map(org => (
-                  <div key={org.org_id} style={s.orgCard}>
-                    <div style={s.orgHeader}>
-                      <div style={s.orgAvatar}>{org.org_name[0]}</div>
-                      <div>
-                        <div style={s.orgName}>{org.org_name}</div>
-                        {org.verified_by_admin && (
-                          <div style={s.verifiedBadge}>✓ 관리자 인증</div>
-                        )}
-                      </div>
+          {/* 후원 단체 - 전체 공간 */}
+          <div style={s.supportSection}>
+            <div style={s.cardLabel}>♡ Support Relief</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
+              {orgs.map(org => (
+                <div key={org.org_id} style={s.orgCard}>
+                  <div style={s.orgHeader}>
+                    <div style={s.orgAvatar}>{org.org_name[0]}</div>
+                    <div>
+                      <div style={s.orgName}>{org.org_name}</div>
+                      {org.verified_by_admin && (
+                        <div style={s.verifiedBadge}>✓ 관리자 인증</div>
+                      )}
                     </div>
-                    <p style={s.orgDesc}>{org.activity_summary}</p>
-                    {org.donation_link && (
-                      <a href={org.donation_link} target="_blank" rel="noopener noreferrer" style={s.donateBtn}>
-                        후원하기 ↗
-                      </a>
-                    )}
-                    {org.volunteer_link && (
-                      <a href={org.volunteer_link} target="_blank" rel="noopener noreferrer" style={{ ...s.donateBtn, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', marginTop: 6 }}>
-                        봉사 신청 ↗
-                      </a>
-                    )}
                   </div>
-                ))}
-              </div>
+                  <p style={s.orgDesc}>{org.activity_summary}</p>
+                  {org.donation_link && (
+                    <a href={org.donation_link} target="_blank" rel="noopener noreferrer" style={s.donateBtn}>
+                      후원하기 ↗
+                    </a>
+                  )}
+                  {org.volunteer_link && (
+                    <a href={org.volunteer_link} target="_blank" rel="noopener noreferrer" style={{ ...s.donateBtn, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', marginTop: 6 }}>
+                      봉사 신청 ↗
+                    </a>
+                  )}
+                </div>
+              ))}
+              {orgs.length === 0 && (
+                <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
+                  등록된 후원 단체가 없습니다
+                </div>
+              )}
             </div>
-          )}
-
-          {/* 인증 안내 */}
-          <div style={s.verifiedNote}>
-            <span style={{ fontSize: 16 }}>🛡️</span>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 12, color: '#4ade80', marginBottom: 4 }}>Verified Actions</div>
-              <div style={{ fontSize: 11, color: '#64748b' }}>All donation links are verified by the Ministry of Interior and Safety.</div>
+            <div style={{ ...s.verifiedNote, marginTop: 12, flexShrink: 0 }}>
+              <span style={{ fontSize: 16 }}>🛡️</span>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 12, color: '#4ade80', marginBottom: 4 }}>Verified Actions</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>All donation links are verified by the Ministry of Interior and Safety.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -283,13 +269,13 @@ const s: Record<string, React.CSSProperties> = {
   articleTitle: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 6, lineHeight: 1.4 },
   articleSummary: { fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: 0 },
   articleReadMore: { fontSize: 11, color: '#818cf8', marginTop: 8 },
-  colRight: { width: 300, background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16, flexShrink: 0, overflowY: 'auto' },
+  colRight: { width: 300, background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16, flexShrink: 0, overflow: 'hidden' },
   emergencyCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14 },
   emergencyBtns: { display: 'flex', gap: 10, marginTop: 10 },
   emergencyCall: { flex: 1, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px', textAlign: 'center' },
   emergencyCallLabel: { fontSize: 9, color: '#64748b', letterSpacing: 1, marginBottom: 4 },
   emergencyCallNum: { fontSize: 24, fontWeight: 900, color: '#f87171' },
-  supportSection: {},
+  supportSection: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 },
   orgCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14 },
   orgHeader: { display: 'flex', gap: 10, marginBottom: 10 },
   orgAvatar: { width: 36, height: 36, borderRadius: '50%', background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#818cf8', flexShrink: 0 },

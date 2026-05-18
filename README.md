@@ -20,9 +20,10 @@
 |------|-----------|
 | 프레임워크 | React (Vite) |
 | 언어 | TypeScript |
-| 스타일링 | CSS Modules |
+| 스타일링 | CSS |
 | 라우팅 | React Router DOM |
-| 지도 | Kakao Maps API |
+| 지도 | Leaflet / React-Leaflet |
+
 | 백엔드 | Spring Boot (별도 레포) |
 
 ---
@@ -31,17 +32,14 @@
 
 ```
 src/
-├── components/
-│   ├── Map/        # 지도 관련 컴포넌트
-│   ├── Panel/      # 사건 상세 패널
-│   ├── Modal/      # hover 모달
-│   └── Filter/     # 필터 컴포넌트
 ├── pages/
-│   ├── Landing.tsx   # 랜딩 화면
-│   ├── MapMain.tsx   # 지도 메인 화면
-│   └── Admin.tsx     # 운영자 관리 화면
+│   ├── Landing.tsx      # 랜딩 화면
+│   ├── MapMain.tsx      # 지도 메인 화면
+│   ├── EventDetail.tsx  # 사건 상세 화면
+│   └── Admin.tsx        # 운영자 관리 화면
+├── types/          # 타입 정의
 ├── data/           # 더미 데이터
-└── styles/         # 공통 스타일
+└── assets/         # 이미지 등 정적 파일
 ```
 
 ---
@@ -50,10 +48,10 @@ src/
 
 ```bash
 # 저장소 클론
-git clone https://github.com/...
+git clone https://github.com/2026WebSW/FE
 
 # 패키지 설치
-cd fe
+cd FE
 npm install
 
 # 개발 서버 실행

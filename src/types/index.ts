@@ -1,4 +1,4 @@
-export type DisasterType = 'flood' | 'typhoon' | 'wildfire' | 'earthquake' | 'landslide' | 'heavy_rain' | 'heavy_snow' | 'strong_wind' | 'drought' | 'heatwave'
+export type DisasterType = 'wildfire' | 'heavy_rain' | 'typhoon' | 'earthquake'
 export type Severity = 'low' | 'medium' | 'high' | 'critical'
 export type EventStatus = 'active' | 'monitoring' | 'recovery' | 'closed'
 export type HelpStatus = 'none' | 'donation_available' | 'volunteer_available' | 'both_available'

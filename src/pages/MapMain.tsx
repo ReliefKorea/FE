@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { NavigateFunction } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { mockEvents, disasterTypeLabels, disasterTypeIcons, severityConfig, statusConfig } from '../data/mockData'
@@ -17,11 +17,10 @@ L.Icon.Default.mergeOptions({
 
 const CATEGORIES: { key: DisasterType | 'all'; label: string; icon: string }[] = [
   { key: 'all',        label: 'All Alerts', icon: '🏠' },
-  { key: 'wildfire',   label: 'Wildfires',  icon: '🔥' },
-  { key: 'typhoon',    label: 'Typhoons',   icon: '🌀' },
-  { key: 'flood',      label: 'Floods',     icon: '🌊' },
-  { key: 'heavy_rain', label: 'Heavy Rain', icon: '🌧️' },
-  { key: 'earthquake', label: 'Earthquakes',icon: '⚡' },
+  { key: 'wildfire',   label: '산불',       icon: '🔥' },
+  { key: 'heavy_rain', label: '호우',       icon: '🌧️' },
+  { key: 'typhoon',    label: '태풍',       icon: '🌀' },
+  { key: 'earthquake', label: '지진',       icon: '⚡' },
 ]
 
 function makeIcon(event: RiskEvent) {
@@ -167,25 +166,6 @@ export default function MapMain() {
                 icon={makeIcon(event)}
                 eventHandlers={{ click: () => setSelectedEvent(event) }}
               >
-                <Popup>
-                  <div style={{ minWidth: 200 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, color: '#e2e8f0' }}>
-                      {disasterTypeIcons[event.disaster_type]} {event.title}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>
-                      📍 {event.region_name} · {disasterTypeLabels[event.disaster_type]}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
-                      {event.official_summary.slice(0, 60)}...
-                    </div>
-                    <button
-                      onClick={() => navigate(`/event/${event.event_id}`)}
-                      style={{ marginTop: 8, width: '100%', background: '#16a34a', border: 'none', borderRadius: 6, padding: '6px', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
-                    >
-                      상세 보기 →
-                    </button>
-                  </div>
-                </Popup>
               </Marker>
             ))}
           </MapContainer>

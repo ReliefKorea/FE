@@ -215,15 +215,11 @@ export const mockOrganizations: OrganizationAction[] = [
 ]
 
 export const disasterTypeLabels: Record<string, string> = {
-  flood: '홍수', typhoon: '태풍', wildfire: '산불', earthquake: '지진',
-  landslide: '산사태', heavy_rain: '호우', heavy_snow: '폭설',
-  strong_wind: '강풍', drought: '가뭄', heatwave: '폭염',
+  wildfire: '산불', heavy_rain: '호우', typhoon: '태풍', earthquake: '지진',
 }
 
 export const disasterTypeIcons: Record<string, string> = {
-  flood: '🌊', typhoon: '🌀', wildfire: '🔥', earthquake: '⚡',
-  landslide: '⛰️', heavy_rain: '🌧️', heavy_snow: '❄️',
-  strong_wind: '💨', drought: '☀️', heatwave: '🌡️',
+  wildfire: '🔥', heavy_rain: '🌧️', typhoon: '🌀', earthquake: '⚡',
 }
 
 export const severityConfig: Record<string, { label: string; color: string; bgColor: string; dotColor: string }> = {

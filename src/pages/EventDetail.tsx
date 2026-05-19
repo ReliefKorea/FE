@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   mockEvents, mockOfficialUpdates, mockArticles, mockOrganizations,
@@ -7,6 +8,7 @@ import {
 export default function EventDetail() {
   const { eventId } = useParams()
   const navigate = useNavigate()
+  const [hoveredOrg, setHoveredOrg] = useState<string | null>(null)
 
   const event = mockEvents.find(e => e.event_id === eventId)
   if (!event) {
@@ -94,7 +96,11 @@ export default function EventDetail() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {officialUpdates.map(upd => (
-                <div key={upd.update_id} style={s.officialCard}>
+                <div
+                  key={upd.update_id}
+                  style={{ ...s.officialCard, cursor: upd.original_link ? 'pointer' : 'default' }}
+                  onClick={() => upd.original_link && window.open(upd.original_link, '_blank', 'noopener,noreferrer')}
+                >
                   <div style={s.officialCardTop}>
                     <span style={s.officialSource}>{upd.source_name}</span>
                     <span style={s.officialTime}>{timeAgo(upd.issued_at)}</span>
@@ -152,17 +158,28 @@ export default function EventDetail() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
               {orgs.map(org => (
                 <div key={org.org_id} style={s.orgCard}>
-                  <img
-                    src={`https://picsum.photos/seed/${org.org_id}/600/140`}
-                    alt=""
-                    style={s.orgImage}
-                  />
+                  <div
+                    style={s.orgImageWrap}
+                    onMouseEnter={() => setHoveredOrg(org.org_id)}
+                    onMouseLeave={() => setHoveredOrg(null)}
+                  >
+                    <img
+                      src={`https://picsum.photos/seed/${org.org_id}/600/140`}
+                      alt=""
+                      style={s.orgImage}
+                    />
+                    {hoveredOrg === org.org_id && (
+                      <div style={s.orgImageOverlay}>
+                        <button style={s.orgHistoryBtn} onClick={() => navigate(`/org/${org.org_id}/history`)}>🤖 AI 후원 히스토리 보기</button>
+                      </div>
+                    )}
+                  </div>
                   <div style={s.orgCardBody}>
                     <div style={s.orgName}>{org.org_name}</div>
                     {org.verified_by_admin && (
                       <div style={s.verifiedBadge}>✓ 관리자 인증</div>
                     )}
-                    <p style={s.orgDesc}>{org.activity_summary}</p>
+                    <p style={s.orgDesc}>{org.ai_message ?? org.activity_summary}</p>
                     {org.donation_link && (
                       <a href={org.donation_link} target="_blank" rel="noopener noreferrer" style={s.donateBtn}>
                         후원하기 ↗
@@ -256,7 +273,10 @@ const s: Record<string, React.CSSProperties> = {
   cardLabel: { fontSize: 11, color: '#64748b', letterSpacing: 1, fontWeight: 600, marginBottom: 10, textTransform: 'uppercase' as const },
   supportSection: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 },
   orgCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, overflow: 'hidden' },
+  orgImageWrap: { position: 'relative', overflow: 'hidden' },
   orgImage: { width: '100%', height: 140, objectFit: 'cover' as const, display: 'block' },
+  orgImageOverlay: { position: 'absolute', inset: 0, background: 'rgba(8,11,20,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  orgHistoryBtn: { background: 'rgba(99,102,241,0.25)', border: '1px solid rgba(99,102,241,0.5)', borderRadius: 8, padding: '9px 18px', color: '#c7d2fe', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   orgCardBody: { padding: 14 },
   orgName: { fontSize: 13, fontWeight: 600, color: '#e2e8f0' },
   verifiedBadge: { fontSize: 10, color: '#4ade80', marginTop: 2, marginBottom: 8 },

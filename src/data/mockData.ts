@@ -1,4 +1,4 @@
-import type { RiskEvent, OfficialUpdate, RelatedArticle, OrganizationAction } from '../types'
+import type { RiskEvent, OfficialUpdate, RelatedArticle, OrganizationAction, DonationRecord } from '../types'
 
 export const mockEvents: RiskEvent[] = [
   {
@@ -211,6 +211,58 @@ export const mockOrganizations: OrganizationAction[] = [
     evidence_note: '부산시 협력 단체 명단 확인',
     verified_by_admin: true,
     last_checked_at: '2026-05-12T00:30:00',
+  },
+]
+
+export const mockDonationHistory: DonationRecord[] = [
+  {
+    record_id: 'rec-001', org_id: 'org-001', date: '2026-05-12', disaster_type: 'wildfire',
+    title: '강원 산불 이재민 긴급 구호', region: '강원도 고성·속초',
+    amount: '₩48,200,000', beneficiaries: 820,
+    description: '대피소 3곳 운영, 이재민 820명에게 식료품·생활용품·의류 긴급 지원. 심리 상담 서비스 병행 제공.',
+  },
+  {
+    record_id: 'rec-002', org_id: 'org-001', date: '2025-09-03', disaster_type: 'typhoon',
+    title: '태풍 힌남노 피해 복구 지원', region: '경상북도 포항',
+    amount: '₩120,500,000', beneficiaries: 3400,
+    description: '포항 일대 침수 피해 가구 복구 지원. 이재민 임시 거처 마련 및 생계비 지원.',
+  },
+  {
+    record_id: 'rec-003', org_id: 'org-001', date: '2025-02-14', disaster_type: 'earthquake',
+    title: '동해 지진 피해 주민 지원', region: '강원도 동해',
+    amount: '₩32,000,000', beneficiaries: 540,
+    description: '지진 피해 주민 540명에게 임시 대피소 운영 및 긴급 생활 물자 배급.',
+  },
+  {
+    record_id: 'rec-004', org_id: 'org-001', date: '2024-07-22', disaster_type: 'heavy_rain',
+    title: '충청 수해 복구 봉사', region: '충청남도 청양',
+    amount: '₩61,000,000', beneficiaries: 1200,
+    description: '수해 피해 농가 복구 봉사 2,000인시 투입. 농작물 피해 가구 생계비 지원.',
+  },
+
+  {
+    record_id: 'rec-005', org_id: 'org-002', date: '2026-05-11', disaster_type: 'wildfire',
+    title: '산불 피해 주택 복구 착수', region: '강원도',
+    amount: '₩25,000,000', beneficiaries: 180,
+    description: '피해 가구 직접 방문 생활용품 지원. 주택 복구 자재비 지원 시작.',
+  },
+  {
+    record_id: 'rec-006', org_id: 'org-002', date: '2024-11-05', disaster_type: 'heavy_rain',
+    title: '강원 폭우 피해 지원', region: '강원도 춘천',
+    amount: '₩18,700,000', beneficiaries: 390,
+    description: '춘천 일대 침수 피해 주민 390명 지원. 가구·가전 교체비 지원.',
+  },
+  {
+    record_id: 'rec-007', org_id: 'org-003', date: '2026-05-12', disaster_type: 'heavy_rain',
+    title: '부산 집중호우 수해 지원', region: '부산',
+    amount: '₩15,300,000', beneficiaries: 270,
+    description: '침수 피해 가정 긴급 생계비 및 주거 복구 지원 착수. 취약계층 우선 배정.',
+  },
+  {
+    record_id: 'rec-008', org_id: 'org-003', date: '2025-08-18', disaster_type: 'typhoon',
+    title: '태풍 카눈 부산 피해 복구', region: '부산 사하구·강서구',
+    amount: '₩43,600,000', beneficiaries: 950,
+    description: '태풍 피해 저소득 가구 950명 대상 복구비·생활물품 지원.',
   },
 ]
 

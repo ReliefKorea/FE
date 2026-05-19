@@ -40,6 +40,18 @@ export interface RelatedArticle {
   url: string
 }
 
+export interface DonationRecord {
+  record_id: string
+  org_id: string
+  date: string
+  title: string
+  amount?: string
+  beneficiaries?: number
+  region: string
+  description: string
+  disaster_type?: DisasterType
+}
+
 export interface OrganizationAction {
   org_id: string
   event_id: string
@@ -47,6 +59,7 @@ export interface OrganizationAction {
   activity_region: string
   activity_type: string
   activity_summary: string
+  ai_message?: string  // AI가 생성한 감성 멘트
   donation_link?: string
   volunteer_link?: string
   evidence_note: string

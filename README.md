@@ -36,11 +36,24 @@ src/
 │   ├── Landing.tsx      # 랜딩 화면
 │   ├── MapMain.tsx      # 지도 메인 화면
 │   ├── EventDetail.tsx  # 사건 상세 화면
+│   ├── OrgHistory.tsx   # 재단 후원 히스토리 화면
 │   └── Admin.tsx        # 운영자 관리 화면
 ├── types/          # 타입 정의
 ├── data/           # 더미 데이터
 └── assets/         # 이미지 등 정적 파일
 ```
+
+---
+
+## 페이지별 라우트
+
+| 경로 | 페이지 | 설명 |
+|------|--------|------|
+| `/` | Landing | 랜딩 화면 |
+| `/map` | MapMain | 지도 메인 — 마커 클릭 시 우측 패널 표시 |
+| `/event/:eventId` | EventDetail | 사건 상세 — 공식 리포트 / 뉴스 / 후원 3열 |
+| `/org/:orgId/history` | OrgHistory | 재단 후원 히스토리 타임라인 |
+| `/admin` | Admin | 운영자 관리 화면 |
 
 ---
 

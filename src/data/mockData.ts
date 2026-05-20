@@ -34,7 +34,7 @@ export const mockEvents: RiskEvent[] = [
   {
     event_id: 'evt-003',
     title: '경북 산사태 위험',
-    disaster_type: 'landslide',
+    disaster_type: 'heavy_rain',
     region_name: '경상북도',
     center_lat: 36.4919,
     center_lng: 128.8889,
@@ -64,7 +64,7 @@ export const mockEvents: RiskEvent[] = [
   {
     event_id: 'evt-005',
     title: '충남 가뭄 위기',
-    disaster_type: 'drought',
+    disaster_type: 'heavy_rain',
     region_name: '충청남도',
     center_lat: 36.5184,
     center_lng: 126.8000,
@@ -79,7 +79,7 @@ export const mockEvents: RiskEvent[] = [
   {
     event_id: 'evt-006',
     title: '인천 강풍 경보',
-    disaster_type: 'strong_wind',
+    disaster_type: 'typhoon',
     region_name: '인천',
     center_lat: 37.4563,
     center_lng: 126.7052,

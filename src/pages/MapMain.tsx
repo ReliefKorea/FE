@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { NavigateFunction } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { mockEvents, disasterTypeLabels, disasterTypeIcons, severityConfig, statusConfig } from '../data/mockData'
+import { getEvents } from '../api'
+import { disasterTypeLabels, disasterTypeIcons, severityConfig, statusConfig } from '../data/mockData'
 import type { RiskEvent, DisasterType } from '../types'
 
 // leaflet 기본 아이콘 경로 문제 해결
-delete (L.Icon.Default.prototype as Record<string, unknown>)._getIconUrl
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -21,6 +22,22 @@ const CATEGORIES: { key: DisasterType | 'all'; label: string; icon: string }[] =
   { key: 'typhoon',    label: '태풍',       icon: '🌀' },
   { key: 'earthquake', label: '지진',       icon: '⚡' },
 ]
+
+const EVENT_REFRESH_INTERVAL_MS = 30000
+
+const KOREA_OPERATION_BOUNDS = {
+  minLat: 32,
+  maxLat: 43,
+  minLng: 124,
+  maxLng: 132,
+}
+
+function isInKoreaOperationBounds(event: RiskEvent) {
+  return event.center_lat >= KOREA_OPERATION_BOUNDS.minLat
+    && event.center_lat <= KOREA_OPERATION_BOUNDS.maxLat
+    && event.center_lng >= KOREA_OPERATION_BOUNDS.minLng
+    && event.center_lng <= KOREA_OPERATION_BOUNDS.maxLng
+}
 
 function makeIcon(event: RiskEvent) {
   const cfg = severityConfig[event.severity]
@@ -42,13 +59,76 @@ function makeIcon(event: RiskEvent) {
   return L.divIcon({ html, className: '', iconSize: [40, 40], iconAnchor: [20, 20] })
 }
 
+function MapFocusController({ event }: { event: RiskEvent | null }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!event) return
+
+    map.flyTo([event.center_lat, event.center_lng], Math.max(map.getZoom(), 6), {
+      animate: true,
+      duration: 0.6,
+    })
+  }, [event, map])
+
+  return null
+}
+
 export default function MapMain() {
   const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState<DisasterType | 'all'>('all')
   const [selectedEvent, setSelectedEvent] = useState<RiskEvent | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [events, setEvents] = useState<RiskEvent[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true)
+  const [eventsError, setEventsError] = useState<string | null>(null)
 
-  const filteredEvents = mockEvents.filter(e => {
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadEvents() {
+      try {
+        const nextEvents = await getEvents()
+
+        if (cancelled) return
+        setEvents(nextEvents)
+        setEventsError(null)
+        setSelectedEvent(current => {
+          if (!current) return current
+          return nextEvents.find(event => event.event_id === current.event_id) ?? null
+        })
+      } catch (error) {
+        if (!cancelled) {
+          setEventsError(error instanceof Error ? error.message : '재난 데이터를 불러오지 못했습니다')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingEvents(false)
+        }
+      }
+    }
+
+    loadEvents()
+    const refreshTimer = window.setInterval(loadEvents, EVENT_REFRESH_INTERVAL_MS)
+
+    function refreshOnVisible() {
+      if (document.visibilityState === 'visible') {
+        loadEvents()
+      }
+    }
+
+    document.addEventListener('visibilitychange', refreshOnVisible)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(refreshTimer)
+      document.removeEventListener('visibilitychange', refreshOnVisible)
+    }
+  }, [])
+
+  const mapEvents = events.filter(isInKoreaOperationBounds)
+
+  const filteredEvents = mapEvents.filter(e => {
     const matchCat = activeCategory === 'all' || e.disaster_type === activeCategory
     const matchSearch = searchQuery === '' ||
       e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -56,7 +136,7 @@ export default function MapMain() {
     return matchCat && matchSearch
   })
 
-  const activeCount = mockEvents.filter(e => e.status === 'active').length
+  const activeCount = mapEvents.filter(e => e.status === 'active').length
 
   return (
     <div style={s.root}>
@@ -145,6 +225,12 @@ export default function MapMain() {
             <button style={s.filterBtn}>🔧 필터</button>
           </div>
 
+          {(isLoadingEvents || eventsError) && (
+            <div style={{ ...s.mapStatus, ...(eventsError ? s.mapStatusError : {}) }}>
+              {isLoadingEvents ? '재난 데이터를 불러오는 중...' : eventsError}
+            </div>
+          )}
+
           {/* Leaflet 지도 */}
           <MapContainer
             center={[36.5, 127.8]}
@@ -158,6 +244,7 @@ export default function MapMain() {
               subdomains="abcd"
               maxZoom={19}
             />
+            <MapFocusController event={selectedEvent} />
             {filteredEvents.map(event => (
               <Marker
                 key={event.event_id}
@@ -333,6 +420,8 @@ const s: Record<string, React.CSSProperties> = {
   searchBar: { position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, display: 'flex', gap: 8, width: '60%', minWidth: 340 },
   searchInput: { flex: 1, background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 16px', color: '#e2e8f0', fontSize: 13, outline: 'none', backdropFilter: 'blur(12px)' },
   filterBtn: { background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', backdropFilter: 'blur(12px)' },
+  mapStatus: { position: 'absolute', top: 68, left: '50%', transform: 'translateX(-50%)', zIndex: 1000, background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 12px', color: '#94a3b8', fontSize: 12, backdropFilter: 'blur(12px)' },
+  mapStatusError: { color: '#fca5a5', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(127,29,29,0.72)' },
   bottomBar: { height: 40, background: 'rgba(13,17,23,0.95)', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 20, padding: '0 20px', flexShrink: 0, zIndex: 5 },
   legendItem: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#64748b', letterSpacing: 0.5 },
   legendDot: { width: 8, height: 8, borderRadius: '50%', display: 'inline-block' },

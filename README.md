@@ -1,76 +1,84 @@
-# 재난 복구 활동 시각화 및 후원 연결 플랫폼
+# Disaster Frontend
 
-2026-1 OpensourceWebSoftware FE
+React + Vite frontend for the disaster response platform.
 
----
+The frontend talks to the backend through `VITE_API_BASE_URL` and uses the `/api/events` contract. It should not call the legacy `/api/disasters` endpoint directly.
 
-## 주요 기능
+## Requirements
 
-- 한국 지도 위에 현재 진행 중인 재난 사건 표시
-- 사건별 공식 정보(기상특보, 재난문자)와 관련 기사 요약 제공
-- 현장 복구 단체 정보 및 후원·봉사 링크 연결
-- 재난 유형, 진행 상태, 도움 가능 여부 필터 기능
-- 운영자 등록 화면을 통한 단체 및 사건 정보 수동 관리
+- Node.js 18 or newer
+- npm
+- Running disaster backend
 
----
-
-## 기술 스택
-
-| 구분 | 사용 기술 |
-|------|-----------|
-| 프레임워크 | React (Vite) |
-| 언어 | TypeScript |
-| 스타일링 | CSS |
-| 라우팅 | React Router DOM |
-| 지도 | Leaflet / React-Leaflet |
-
-| 백엔드 | Spring Boot (별도 레포) |
-
----
-
-## 프로젝트 구조
-
-```
-src/
-├── pages/
-│   ├── Landing.tsx      # 랜딩 화면
-│   ├── MapMain.tsx      # 지도 메인 화면
-│   ├── EventDetail.tsx  # 사건 상세 화면
-│   ├── OrgHistory.tsx   # 재단 후원 히스토리 화면
-│   └── Admin.tsx        # 운영자 관리 화면
-├── types/          # 타입 정의
-├── data/           # 더미 데이터
-└── assets/         # 이미지 등 정적 파일
-```
-
----
-
-## 페이지별 라우트
-
-| 경로 | 페이지 | 설명 |
-|------|--------|------|
-| `/` | Landing | 랜딩 화면 |
-| `/map` | MapMain | 지도 메인 — 마커 클릭 시 우측 패널 표시 |
-| `/event/:eventId` | EventDetail | 사건 상세 — 공식 리포트 / 뉴스 / 후원 3열 |
-| `/org/:orgId/history` | OrgHistory | 재단 후원 히스토리 타임라인 |
-| `/admin` | Admin | 운영자 관리 화면 |
-
----
-
-## 실행 방법
+## Setup
 
 ```bash
-# 저장소 클론
-git clone https://github.com/2026WebSW/FE
-
-# 패키지 설치
-cd FE
 npm install
-
-# 개발 서버 실행
+cp .env.example .env
 npm run dev
 ```
 
-실행 후 브라우저에서 `http://localhost:5173` 접속
+On Windows PowerShell:
 
----
+```powershell
+Copy-Item .env.example .env
+npm run dev
+```
+
+## Environment
+
+```text
+VITE_API_BASE_URL=http://localhost:3000/api
+```
+
+Use `.env.example` for safe placeholders only. Do not commit `.env` or `.env.local`.
+
+## Scripts
+
+```bash
+npm run dev
+npm run build
+npm run preview
+```
+
+## Backend Connection
+
+Start the backend first, then run the frontend. The default frontend API base URL is:
+
+```text
+http://localhost:3000/api
+```
+
+The frontend expects these backend endpoints:
+
+- `GET /api/events`
+- `GET /api/events/:eventId`
+- `GET /api/events/:eventId/articles`
+- `GET /api/events/:eventId/updates`
+- `GET /api/events/:eventId/orgs`
+- `GET /api/orgs/:orgId`
+- `GET /api/orgs/:orgId/history`
+
+## Troubleshooting
+
+### `ERR_CONNECTION_REFUSED`
+
+The backend is probably not running. Start the backend and confirm:
+
+```text
+http://localhost:3000/api/health
+```
+
+### Wrong Backend URL
+
+Check `.env`:
+
+```text
+VITE_API_BASE_URL=http://localhost:3000/api
+```
+
+Restart the Vite dev server after changing `.env`.
+
+### Stale Data In Development
+
+Hard refresh once and confirm the service worker is not caching development API responses.

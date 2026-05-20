@@ -1,33 +1,98 @@
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { getOrg, getOrgHistory } from '../api'
 import {
-  mockOrganizations, mockDonationHistory,
   disasterTypeLabels, disasterTypeIcons,
 } from '../data/mockData'
+import type { DonationRecord, OrganizationAction } from '../types'
 
 export default function OrgHistory() {
   const { orgId } = useParams()
   const navigate = useNavigate()
+  const [org, setOrg] = useState<OrganizationAction | null>(null)
+  const [records, setRecords] = useState<DonationRecord[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const org = mockOrganizations.find(o => o.org_id === orgId)
-  if (!org) {
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadOrgHistory() {
+      if (!orgId) {
+        setOrg(null)
+        setRecords([])
+        setError('단체를 찾을 수 없습니다')
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(true)
+
+      try {
+        const [nextOrg, nextRecords] = await Promise.all([
+          getOrg(orgId),
+          getOrgHistory(orgId),
+        ])
+
+        if (cancelled) return
+        setOrg(nextOrg)
+        setRecords(nextRecords)
+        setError(null)
+      } catch (loadError) {
+        if (!cancelled) {
+          setOrg(null)
+          setRecords([])
+          setError(loadError instanceof Error && loadError.message === 'Organization not found'
+            ? '단체를 찾을 수 없습니다'
+            : '단체 후원 기록을 불러오지 못했습니다')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadOrgHistory()
+
+    return () => {
+      cancelled = true
+    }
+  }, [orgId])
+
+  if (isLoading) {
     return (
       <div style={{ background: '#080b14', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e2e8f0' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <div style={{ fontSize: 20, marginBottom: 12 }}>단체를 찾을 수 없습니다</div>
+          <div style={{ fontSize: 20, marginBottom: 12 }}>후원 기록을 불러오는 중입니다</div>
           <button onClick={() => navigate(-1)} style={s.backBtn}>← 뒤로 가기</button>
         </div>
       </div>
     )
   }
 
-  const records = mockDonationHistory.filter(r => r.org_id === orgId)
+  if (error || !org) {
+    return (
+      <div style={{ background: '#080b14', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e2e8f0' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontSize: 20, marginBottom: 12 }}>{error ?? '단체를 찾을 수 없습니다'}</div>
+          <button onClick={() => navigate(-1)} style={s.backBtn}>← 뒤로 가기</button>
+        </div>
+      </div>
+    )
+  }
+
   const totalAmount = records
     .filter(r => r.amount)
     .reduce((sum, r) => sum + parseInt(r.amount!.replace(/[₩,]/g, '')), 0)
   const totalBeneficiaries = records
     .filter(r => r.beneficiaries)
     .reduce((sum, r) => sum + (r.beneficiaries ?? 0), 0)
+  const oldestRecordYear = records.length > 0
+    ? new Date(records[records.length - 1].date).getFullYear()
+    : null
+  const activityStartYear = oldestRecordYear ? `${oldestRecordYear}년~` : '-'
 
   return (
     <div style={s.root}>
@@ -85,7 +150,7 @@ export default function OrgHistory() {
         </div>
         <div style={s.statDivider} />
         <div style={s.statItem}>
-          <div style={s.statValue}>{new Date(records[records.length - 1]?.date ?? '').getFullYear() || '-'}년~</div>
+          <div style={s.statValue}>{activityStartYear}</div>
           <div style={s.statLabel}>활동 시작</div>
         </div>
       </div>

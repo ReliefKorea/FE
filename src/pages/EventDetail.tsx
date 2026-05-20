@@ -1,31 +1,206 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { getEvent, getEventArticles, getEventOrganizations, getEventUpdates } from '../api'
 import {
-  mockEvents, mockOfficialUpdates, mockArticles, mockOrganizations,
+  mockEvents,
   disasterTypeLabels, disasterTypeIcons, severityConfig, statusConfig, timeAgo,
 } from '../data/mockData'
+import type { OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } from '../types'
 
 export default function EventDetail() {
   const { eventId } = useParams()
   const navigate = useNavigate()
   const [hoveredOrg, setHoveredOrg] = useState<string | null>(null)
+  const [event, setEvent] = useState<RiskEvent | null>(null)
+  const [isLoadingEvent, setIsLoadingEvent] = useState(true)
+  const [eventError, setEventError] = useState<string | null>(null)
+  const [articles, setArticles] = useState<RelatedArticle[]>([])
+  const [isLoadingArticles, setIsLoadingArticles] = useState(false)
+  const [articlesError, setArticlesError] = useState<string | null>(null)
+  const [officialUpdates, setOfficialUpdates] = useState<OfficialUpdate[]>([])
+  const [isLoadingUpdates, setIsLoadingUpdates] = useState(false)
+  const [updatesError, setUpdatesError] = useState<string | null>(null)
+  const [orgs, setOrgs] = useState<OrganizationAction[]>([])
+  const [isLoadingOrgs, setIsLoadingOrgs] = useState(false)
+  const [orgsError, setOrgsError] = useState<string | null>(null)
 
-  const event = mockEvents.find(e => e.event_id === eventId)
-  if (!event) {
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadEvent() {
+      if (!eventId) {
+        setEvent(null)
+        setEventError('사건을 찾을 수 없습니다')
+        setIsLoadingEvent(false)
+        return
+      }
+
+      setIsLoadingEvent(true)
+
+      try {
+        const nextEvent = await getEvent(eventId)
+
+        if (cancelled) return
+        setEvent(nextEvent)
+        setEventError(null)
+      } catch (error) {
+        if (!cancelled) {
+          setEvent(null)
+          setEventError(error instanceof Error && error.message === 'Event not found'
+            ? '사건을 찾을 수 없습니다'
+            : '재난 정보를 불러오지 못했습니다')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingEvent(false)
+        }
+      }
+    }
+
+    loadEvent()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadUpdates() {
+      if (!eventId) {
+        setOfficialUpdates([])
+        setUpdatesError(null)
+        setIsLoadingUpdates(false)
+        return
+      }
+
+      setIsLoadingUpdates(true)
+
+      try {
+        const nextUpdates = await getEventUpdates(eventId)
+
+        if (cancelled) return
+        setOfficialUpdates(nextUpdates)
+        setUpdatesError(null)
+      } catch (_) {
+        if (!cancelled) {
+          setOfficialUpdates([])
+          setUpdatesError('공식 리포트를 불러오지 못했습니다')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingUpdates(false)
+        }
+      }
+    }
+
+    loadUpdates()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadArticles() {
+      if (!eventId) {
+        setArticles([])
+        setArticlesError(null)
+        setIsLoadingArticles(false)
+        return
+      }
+
+      setIsLoadingArticles(true)
+
+      try {
+        const nextArticles = await getEventArticles(eventId)
+
+        if (cancelled) return
+        setArticles(nextArticles)
+        setArticlesError(null)
+      } catch (_) {
+        if (!cancelled) {
+          setArticles([])
+          setArticlesError('관련 뉴스를 불러오지 못했습니다')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingArticles(false)
+        }
+      }
+    }
+
+    loadArticles()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadOrganizations() {
+      if (!eventId) {
+        setOrgs([])
+        setOrgsError(null)
+        setIsLoadingOrgs(false)
+        return
+      }
+
+      setIsLoadingOrgs(true)
+
+      try {
+        const nextOrgs = await getEventOrganizations(eventId)
+
+        if (cancelled) return
+        setOrgs(nextOrgs)
+        setOrgsError(null)
+      } catch (_) {
+        if (!cancelled) {
+          setOrgs([])
+          setOrgsError('후원 단체를 불러오지 못했습니다')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingOrgs(false)
+        }
+      }
+    }
+
+    loadOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [eventId])
+
+  if (isLoadingEvent) {
     return (
       <div style={{ background: '#080b14', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e2e8f0' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <div style={{ fontSize: 20, marginBottom: 12 }}>사건을 찾을 수 없습니다</div>
+          <div style={{ fontSize: 20, marginBottom: 12 }}>재난 정보를 불러오는 중입니다</div>
           <button onClick={() => navigate('/map')} style={s.backBtn}>← 지도로 돌아가기</button>
         </div>
       </div>
     )
   }
 
-  const officialUpdates = mockOfficialUpdates.filter(u => u.event_id === eventId)
-  const articles = mockArticles.filter(a => a.event_id === eventId)
-  const orgs = mockOrganizations.filter(o => o.event_id === eventId)
+  if (eventError || !event) {
+    return (
+      <div style={{ background: '#080b14', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e2e8f0' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontSize: 20, marginBottom: 12 }}>{eventError ?? '사건을 찾을 수 없습니다'}</div>
+          <button onClick={() => navigate('/map')} style={s.backBtn}>← 지도로 돌아가기</button>
+        </div>
+      </div>
+    )
+  }
+
   const cfg = severityConfig[event.severity]
   const stCfg = statusConfig[event.status]
 
@@ -95,7 +270,17 @@ export default function EventDetail() {
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {officialUpdates.map(upd => (
+              {isLoadingUpdates && (
+                <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
+                  공식 리포트를 불러오는 중입니다
+                </div>
+              )}
+              {!isLoadingUpdates && updatesError && (
+                <div style={{ fontSize: 13, color: '#fca5a5', textAlign: 'center', padding: '24px 0' }}>
+                  {updatesError}
+                </div>
+              )}
+              {!isLoadingUpdates && !updatesError && officialUpdates.map(upd => (
                 <div
                   key={upd.update_id}
                   style={{ ...s.officialCard, cursor: upd.original_link ? 'pointer' : 'default' }}
@@ -114,7 +299,7 @@ export default function EventDetail() {
                   )}
                 </div>
               ))}
-              {officialUpdates.length === 0 && (
+              {!isLoadingUpdates && !updatesError && officialUpdates.length === 0 && (
                 <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
                   등록된 공식 리포트가 없습니다
                 </div>
@@ -131,18 +316,28 @@ export default function EventDetail() {
               <span style={s.sectionTitle}>관련 뉴스 피드</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {articles.map(art => (
-                <a key={art.article_id} href={art.url} target="_blank" rel="noopener noreferrer" style={s.articleCard}>
-                  <div style={s.articleTop}>
-                    <span style={s.articlePublisher}>{art.publisher}</span>
-                    <span style={s.articleTime}>{timeAgo(art.published_at)}</span>
-                  </div>
-                  <div style={s.articleTitle}>{art.title}</div>
-                  <p style={s.articleSummary}>{art.summary}</p>
-                  <div style={s.articleReadMore}>기사 전문 보기 →</div>
-                </a>
-              ))}
-              {articles.length === 0 && (
+              {isLoadingArticles && (
+                <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
+                  관련 뉴스를 불러오는 중입니다
+                </div>
+              )}
+              {!isLoadingArticles && articlesError && (
+                <div style={{ fontSize: 13, color: '#fca5a5', textAlign: 'center', padding: '24px 0' }}>
+                  {articlesError}
+                </div>
+              )}
+              {!isLoadingArticles && !articlesError && articles.map(art => (
+                  <a key={art.article_id} href={art.url} target="_blank" rel="noopener noreferrer" style={s.articleCard}>
+                    <div style={s.articleTop}>
+                      <span style={s.articlePublisher}>{art.publisher}</span>
+                      <span style={s.articleTime}>{timeAgo(art.published_at)}</span>
+                    </div>
+                    <div style={s.articleTitle}>{art.title}</div>
+                    <p style={s.articleSummary}>{art.summary}</p>
+                    <div style={s.articleReadMore}>기사 전문 보기 →</div>
+                  </a>
+                ))}
+              {!isLoadingArticles && !articlesError && articles.length === 0 && (
                 <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
                   관련 뉴스가 없습니다
                 </div>
@@ -156,7 +351,17 @@ export default function EventDetail() {
           <div style={s.supportSection}>
             <div style={s.cardLabel}>♡ Support Relief</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
-              {orgs.map(org => (
+              {isLoadingOrgs && (
+                <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
+                  후원 단체를 불러오는 중입니다
+                </div>
+              )}
+              {!isLoadingOrgs && orgsError && (
+                <div style={{ fontSize: 13, color: '#fca5a5', textAlign: 'center', padding: '24px 0' }}>
+                  {orgsError}
+                </div>
+              )}
+              {!isLoadingOrgs && !orgsError && orgs.map(org => (
                 <div key={org.org_id} style={s.orgCard}>
                   <div
                     style={s.orgImageWrap}
@@ -193,7 +398,7 @@ export default function EventDetail() {
                   </div>
                 </div>
               ))}
-              {orgs.length === 0 && (
+              {!isLoadingOrgs && !orgsError && orgs.length === 0 && (
                 <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
                   등록된 후원 단체가 없습니다
                 </div>

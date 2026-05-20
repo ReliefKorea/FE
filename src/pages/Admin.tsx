@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { mockEvents, severityConfig, statusConfig, disasterTypeLabels, timeAgo } from '../data/mockData'
+import { getEvents } from '../api'
+import { severityConfig, disasterTypeLabels, timeAgo } from '../data/mockData'
+import type { RiskEvent } from '../types'
 
 type TabKey = 'list' | 'create'
 
@@ -8,20 +10,54 @@ export default function Admin() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<TabKey>('list')
   const [searchQuery, setSearchQuery] = useState('')
+  const [events, setEvents] = useState<RiskEvent[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true)
+  const [eventsError, setEventsError] = useState<string | null>(null)
   const [newEvent, setNewEvent] = useState({
     title: '', region: '', disasterType: '', severity: 'medium', summary: '',
     newsLinks: [''], orgName: '', orgLink: '', publishNow: false,
   })
 
-  const filteredEvents = mockEvents.filter(e =>
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadEvents() {
+      setIsLoadingEvents(true)
+
+      try {
+        const nextEvents = await getEvents()
+
+        if (cancelled) return
+        setEvents(nextEvents)
+        setEventsError(null)
+      } catch (_) {
+        if (!cancelled) {
+          setEvents([])
+          setEventsError('사건 목록을 불러오지 못했습니다')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingEvents(false)
+        }
+      }
+    }
+
+    loadEvents()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const filteredEvents = events.filter(e =>
     searchQuery === '' ||
     e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.region_name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const stats = {
-    active: mockEvents.filter(e => e.status === 'active').length,
-    highRisk: mockEvents.filter(e => e.severity === 'critical' || e.severity === 'high').length,
+    active: events.filter(e => e.status === 'active').length,
+    highRisk: events.filter(e => e.severity === 'critical' || e.severity === 'high').length,
     orgs: 28,
     updated: 86,
   }
@@ -100,7 +136,17 @@ export default function Admin() {
           </div>
 
           {/* 테이블 rows */}
-          {filteredEvents.map(event => {
+          {isLoadingEvents && (
+            <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '32px 0' }}>
+              사건 목록을 불러오는 중입니다
+            </div>
+          )}
+          {!isLoadingEvents && eventsError && (
+            <div style={{ fontSize: 13, color: '#fca5a5', textAlign: 'center', padding: '32px 0' }}>
+              {eventsError}
+            </div>
+          )}
+          {!isLoadingEvents && !eventsError && filteredEvents.map(event => {
             const cfg = severityConfig[event.severity]
             return (
               <div key={event.event_id} style={s.tableRow}>
@@ -126,6 +172,11 @@ export default function Admin() {
               </div>
             )
           })}
+          {!isLoadingEvents && !eventsError && filteredEvents.length === 0 && (
+            <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '32px 0' }}>
+              표시할 사건이 없습니다
+            </div>
+          )}
         </div>
 
         {/* 우측 패널 */}

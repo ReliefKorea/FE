@@ -1,152 +1,162 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { mockEvents } from '../data/mockData'
+import Globe, { type GlobeMethods } from 'react-globe.gl'
+
+const GLOBE_SIZE = 620
+const ALTITUDE = 1.9
+// autoRotateSpeed=2.0 → 30s/orbit(360°). 180°=15s → speed=4.0 → ~7.5s
+const AUTO_ROTATE_SPEED = -4.0
+const STOP_AFTER_MS = 4400
 
 export default function Landing() {
   const navigate = useNavigate()
+  const globeRef = useRef<GlobeMethods | undefined>(undefined)
+  const animStarted = useRef(false)
+  const rafRef = useRef<number>(0)
+  const [contentVisible, setContentVisible] = useState(false)
   const [time, setTime] = useState(new Date())
-  const activeCount = mockEvents.filter(e => e.status === 'active').length
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000)
-    return () => clearInterval(timer)
+    const clock = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(clock)
+  }, [])
+
+  useEffect(() => {
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [])
+
+  const handleGlobeReady = useCallback(() => {
+    if (animStarted.current) return
+    animStarted.current = true
+
+    const globe = globeRef.current
+    if (!globe) return
+
+    globe.controls().enableZoom = false
+    globe.controls().enableRotate = false
+    globe.controls().enablePan = false
+    globe.pointOfView({ lat: 25, lng: 0, altitude: ALTITUDE })
+    globe.controls().autoRotate = true
+    globe.controls().autoRotateSpeed = AUTO_ROTATE_SPEED
+
+    const start = performance.now()
+
+    function tick() {
+      const t = Math.min((performance.now() - start) / STOP_AFTER_MS, 1)
+
+      // 60% 이후부터 코사인 곡선으로 감속
+      if (t >= 0.6) {
+        const phase = (t - 0.6) / 0.4
+        globe.controls().autoRotateSpeed = AUTO_ROTATE_SPEED * Math.cos(phase * Math.PI / 2)
+      }
+
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        globe.controls().autoRotate = false
+        globe.controls().autoRotateSpeed = 0
+        setContentVisible(true)
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
   }, [])
 
   const pad = (n: number) => String(n).padStart(2, '0')
   const timeStr = `${pad(time.getHours())}:${pad(time.getMinutes())}:${pad(time.getSeconds())}`
 
   return (
-    <div style={styles.root}>
-      <div style={styles.bgGlow1} />
-      <div style={styles.bgGlow2} />
+    <div style={s.root}>
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes globeFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
 
-      {/* 상단 헤더 */}
-      <header style={styles.header}>
-        <div style={styles.logo}>
-          <div style={styles.logoIcon}>⊕</div>
-          <span style={styles.logoText}>Relief Korea</span>
+      <div style={s.statusBar}>
+        <div style={s.statusBadge}>
+          <span style={s.statusIcon}>🕐</span>
+          <div>
+            <div style={s.statusLabel}>LOCAL TIME (KST)</div>
+            <div style={s.statusValue}>{timeStr}</div>
+          </div>
         </div>
-        <div style={styles.headerRight}>
-          <div style={styles.statusBadge}>
-            <span style={styles.statusIcon}>🕐</span>
-            <div>
-              <div style={styles.statusLabel}>LOCAL TIME (KST)</div>
-              <div style={styles.statusValue}>{timeStr}</div>
+        <div style={s.statusBadge}>
+          <span style={s.statusIcon}>📡</span>
+          <div>
+            <div style={s.statusLabel}>DATA STREAM</div>
+            <div style={s.statusValue}>Stable</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={s.globeWrapper}>
+        <div style={s.globeFilter}>
+          <Globe
+            ref={globeRef}
+            width={GLOBE_SIZE}
+            height={GLOBE_SIZE}
+            backgroundColor="rgba(0,0,0,0)"
+            globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+            showAtmosphere={true}
+            atmosphereColor="rgba(180,190,210,0.2)"
+            atmosphereAltitude={0.1}
+            onGlobeReady={handleGlobeReady}
+          />
+        </div>
+
+        {contentVisible && (
+          <div style={s.overlay}>
+            <div style={s.overlayBg} />
+            <div style={{ position: 'relative', zIndex: 2, animation: 'fadeUp 3s 0s cubic-bezier(0.16,1,0.3,1) both' }}>
+              <div style={s.logoRow}>
+                <div style={s.logoIcon}>⊕</div>
+                <span style={s.logoText}>Relief Korea</span>
+              </div>
+            </div>
+            <div style={{ position: 'relative', zIndex: 2, animation: 'fadeUp 3s 0s cubic-bezier(0.16,1,0.3,1) both' }}>
+              <p style={s.desc}>
+                지금 발생한 재난과 현재 필요한<br />
+                도움을 <span style={{ color: '#818cf8' }}>지역별로 실시간 확인</span>하세요.
+              </p>
+            </div>
+            <div style={{ position: 'relative', zIndex: 2, animation: 'fadeUp 3s 0s cubic-bezier(0.16,1,0.3,1) both' }}>
+              <button style={s.ctaBtn} onClick={() => navigate('/map')}>
+                현재 재난 보기 &nbsp;›
+              </button>
             </div>
           </div>
-          <div style={styles.statusBadge}>
-            <span style={styles.statusIcon}>📡</span>
-            <div>
-              <div style={styles.statusLabel}>DATA STREAM</div>
-              <div style={styles.statusValue}>Stable</div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* 메인 콘텐츠 */}
-      <main style={styles.main}>
-        {/* 중앙 구체 */}
-        <div style={styles.orb}>
-          <div style={styles.orbRing} />
-          <div style={styles.orbInner}>
-            <div style={styles.orbSubtitle}>STRATEGIC DISASTER INTELLIGENCE</div>
-            <h1 style={{ ...styles.orbTitle, fontSize: 52 }}>
-              Relief Korea
-            </h1>
-            <p style={styles.orbDesc}>
-              지금 발생한 재난과 현재 필요한<br />
-              도움을 <span style={{ color: '#818cf8' }}>지역별로 실시간 확인</span>하세요.
-            </p>
-            <button style={styles.ctaBtn} onClick={() => navigate('/map')}>
-              현재 재난 보기 &nbsp;&gt;
-            </button>
-            <div style={styles.orbMeta}>
-              <span style={styles.metaItem}>⚡ LIVE UPDATES</span>
-              <span style={styles.metaSep}>·</span>
-              <span style={styles.metaItem}>✓ VERIFIED DATA</span>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <footer style={styles.footer}>
-        <div style={styles.footerLeft}>
-          <div style={styles.alertBadge}>
-            <span style={styles.alertDot} />
-            <span>{activeCount} Active Incidents Detected</span>
-          </div>
-        </div>
-      </footer>
-
+        )}
+      </div>
     </div>
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   root: {
-    position: 'relative',
     width: '100%',
     height: '100vh',
     background: '#080b14',
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    fontFamily: "'Segoe UI', system-ui, sans-serif",
-  },
-  bgGlow1: {
-    position: 'absolute',
-    top: '-20%',
-    left: '20%',
-    width: 600,
-    height: 600,
-    background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
-    borderRadius: '50%',
-    pointerEvents: 'none',
-  },
-  bgGlow2: {
-    position: 'absolute',
-    bottom: '-10%',
-    right: '10%',
-    width: 500,
-    height: 500,
-    background: 'radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%)',
-    borderRadius: '50%',
-    pointerEvents: 'none',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '20px 32px',
-    zIndex: 10,
-  },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-  },
-  logoIcon: {
-    width: 36,
-    height: 36,
-    background: 'rgba(99,102,241,0.2)',
-    border: '1px solid rgba(99,102,241,0.5)',
-    borderRadius: 8,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 18,
-    color: '#818cf8',
+    overflow: 'hidden',
+    position: 'relative',
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
+    color: '#e2e8f0',
   },
-  logoText: {
-    color: '#818cf8',
-    fontWeight: 700,
-    fontSize: 18,
-    letterSpacing: 0.5,
-  },
-  headerRight: {
+  statusBar: {
+    position: 'absolute',
+    top: 20,
+    right: 28,
     display: 'flex',
-    gap: 12,
+    gap: 10,
+    zIndex: 20,
   },
   statusBadge: {
     display: 'flex',
@@ -157,9 +167,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 10,
     padding: '10px 16px',
   },
-  statusIcon: {
-    fontSize: 18,
-  },
+  statusIcon: { fontSize: 18 },
   statusLabel: {
     fontSize: 9,
     color: '#64748b',
@@ -172,139 +180,73 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     marginTop: 2,
   },
-  main: {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  orb: {
+  globeWrapper: {
     position: 'relative',
-    width: 560,
-    height: 560,
+    width: GLOBE_SIZE,
+    height: GLOBE_SIZE,
+  },
+  globeFilter: {
+    width: '100%',
+    height: '100%',
+    filter: 'grayscale(1) brightness(1.4) contrast(1.1)',
+    animation: 'globeFadeIn 5s ease both',
+  },
+  overlay: {
+    position: 'absolute',
+    inset: 0,
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 16,
+    textAlign: 'center',
   },
-  orbRing: {
+  overlayBg: {
     position: 'absolute',
     inset: 0,
     borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(15,23,42,0.95) 55%, rgba(30,27,75,0.6) 80%, transparent 100%)',
-    border: '1.5px solid rgba(99,102,241,0.25)',
-    boxShadow: '0 0 80px rgba(99,102,241,0.15), inset 0 0 80px rgba(99,102,241,0.05)',
+    background: 'radial-gradient(circle, rgba(13,15,18,0.82) 28%, transparent 65%)',
+    pointerEvents: 'none',
   },
-  orbInner: {
-    position: 'relative',
-    textAlign: 'center',
-    padding: '0 40px',
-    zIndex: 2,
+  logoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
   },
-  orbSubtitle: {
-    fontSize: 10,
-    color: '#64748b',
-    letterSpacing: 3,
-    marginBottom: 16,
+  logoIcon: {
+    width: 42,
+    height: 42,
+    background: 'rgba(99,102,241,0.2)',
+    border: '1px solid rgba(99,102,241,0.5)',
+    borderRadius: 10,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-  },
-  orbTitle: {
-    fontSize: 52,
-    fontWeight: 900,
-    color: '#f1f5f9',
-    margin: '0 0 8px',
-    lineHeight: 1.1,
-    letterSpacing: -1,
-  },
-  orbTitleAccent: {
+    fontSize: 20,
     color: '#818cf8',
   },
-  orbDesc: {
+  logoText: {
+    color: '#818cf8',
+    fontWeight: 800,
+    fontSize: 30,
+    letterSpacing: 0.3,
+  },
+  desc: {
     fontSize: 15,
     color: '#94a3b8',
-    lineHeight: 1.7,
-    margin: '16px 0 28px',
+    lineHeight: 1.85,
+    margin: 0,
   },
   ctaBtn: {
     background: '#4f46e5',
     color: '#fff',
     border: 'none',
     borderRadius: 50,
-    padding: '14px 36px',
+    padding: '13px 38px',
     fontSize: 14,
     fontWeight: 700,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     cursor: 'pointer',
-    transition: 'background 0.2s, transform 0.1s',
-    boxShadow: '0 4px 24px rgba(79,70,229,0.4)',
+    boxShadow: '0 4px 28px rgba(79,70,229,0.45)',
   },
-  orbMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginTop: 20,
-    fontSize: 11,
-    color: '#475569',
-    letterSpacing: 1,
-  },
-  metaItem: {},
-  metaSep: { color: '#334155' },
-  footer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 32px',
-    borderTop: '1px solid rgba(255,255,255,0.05)',
-    zIndex: 10,
-  },
-  footerLeft: {},
-  alertBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    background: 'rgba(239,68,68,0.1)',
-    border: '1px solid rgba(239,68,68,0.3)',
-    borderRadius: 6,
-    padding: '6px 14px',
-    fontSize: 12,
-    color: '#fca5a5',
-    fontWeight: 600,
-  },
-  alertDot: {
-    width: 7,
-    height: 7,
-    borderRadius: '50%',
-    background: '#ef4444',
-    display: 'inline-block',
-    boxShadow: '0 0 6px #ef4444',
-  },
-  footerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    fontSize: 10,
-    color: '#334155',
-    letterSpacing: 1,
-  },
-  footerRegion: { color: '#475569' },
-  footerMetaText: {},
-  footerMetaDot: { color: '#1e293b' },
-  sideLeftBadge: {
-    position: 'absolute',
-    bottom: 70,
-    left: 32,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 10,
-    padding: '10px 16px',
-    zIndex: 10,
-  },
-  sideIcon: { fontSize: 20 },
 }

@@ -7,6 +7,8 @@ import {
 } from '../data/mockData'
 import type { OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } from '../types'
 
+const ARTICLE_REFRESH_INTERVAL_MS = 30000
+
 export default function EventDetail() {
   const { eventId } = useParams()
   const navigate = useNavigate()
@@ -105,7 +107,7 @@ export default function EventDetail() {
   useEffect(() => {
     let cancelled = false
 
-    async function loadArticles() {
+    async function loadArticles(showLoading = true) {
       if (!eventId) {
         setArticles([])
         setArticlesError(null)
@@ -113,7 +115,9 @@ export default function EventDetail() {
         return
       }
 
-      setIsLoadingArticles(true)
+      if (showLoading) {
+        setIsLoadingArticles(true)
+      }
 
       try {
         const nextArticles = await getEventArticles(eventId)
@@ -134,9 +138,20 @@ export default function EventDetail() {
     }
 
     loadArticles()
+    const refreshTimer = window.setInterval(() => loadArticles(false), ARTICLE_REFRESH_INTERVAL_MS)
+
+    function refreshOnVisible() {
+      if (document.visibilityState === 'visible') {
+        loadArticles(false)
+      }
+    }
+
+    document.addEventListener('visibilitychange', refreshOnVisible)
 
     return () => {
       cancelled = true
+      window.clearInterval(refreshTimer)
+      document.removeEventListener('visibilitychange', refreshOnVisible)
     }
   }, [eventId])
 
@@ -328,13 +343,23 @@ export default function EventDetail() {
               )}
               {!isLoadingArticles && !articlesError && articles.map(art => (
                   <a key={art.article_id} href={art.url} target="_blank" rel="noopener noreferrer" style={s.articleCard}>
-                    <div style={s.articleTop}>
-                      <span style={s.articlePublisher}>{art.publisher}</span>
-                      <span style={s.articleTime}>{timeAgo(art.published_at)}</span>
+                    {art.image_url && (
+                      <img
+                        src={art.image_url}
+                        alt=""
+                        loading="lazy"
+                        style={s.articleThumb}
+                      />
+                    )}
+                    <div style={s.articleBody}>
+                      <div style={s.articleTop}>
+                        <span style={s.articlePublisher}>{art.publisher}</span>
+                        <span style={s.articleTime}>{timeAgo(art.published_at)}</span>
+                      </div>
+                      <div style={s.articleTitle}>{art.title}</div>
+                      <p style={s.articleSummary}>{art.summary}</p>
+                      <div style={s.articleReadMore}>기사 전문 보기 →</div>
                     </div>
-                    <div style={s.articleTitle}>{art.title}</div>
-                    <p style={s.articleSummary}>{art.summary}</p>
-                    <div style={s.articleReadMore}>기사 전문 보기 →</div>
                   </a>
                 ))}
               {!isLoadingArticles && !articlesError && articles.length === 0 && (
@@ -467,7 +492,9 @@ const s: Record<string, React.CSSProperties> = {
   officialTitle: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 6 },
   officialSummary: { fontSize: 13, color: '#94a3b8', lineHeight: 1.6, margin: 0 },
   officialLink: { display: 'inline-block', marginTop: 8, fontSize: 12, color: '#818cf8', textDecoration: 'none' },
-  articleCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px 16px', textDecoration: 'none', display: 'block', transition: 'border-color 0.15s' },
+  articleCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12, textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'stretch', transition: 'border-color 0.15s' },
+  articleThumb: { width: 96, minWidth: 96, aspectRatio: '4 / 3', objectFit: 'cover' as const, borderRadius: 7, background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)' },
+  articleBody: { minWidth: 0, flex: 1 },
   articleTop: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
   articlePublisher: { fontSize: 11, color: '#64748b' },
   articleTime: { fontSize: 11, color: '#475569' },

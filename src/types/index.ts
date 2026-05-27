@@ -38,6 +38,7 @@ export interface RelatedArticle {
   published_at: string
   summary: string
   url: string
+  image_url?: string
 }
 
 export interface DonationRecord {

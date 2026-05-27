@@ -32,11 +32,30 @@ const KOREA_OPERATION_BOUNDS = {
   maxLng: 132,
 }
 
+const KOREA_REGION_KEYWORDS = [
+  '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
+  '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
+  '충청', '전라', '경상'
+]
+
+const NON_DOMESTIC_REGION_KEYWORDS = [
+  '북한', '일본', '중국', '대만', '괌', '팔라우', '필리핀', '하와이', '칠레', '카리브해'
+]
+
 function isInKoreaOperationBounds(event: RiskEvent) {
   return event.center_lat >= KOREA_OPERATION_BOUNDS.minLat
     && event.center_lat <= KOREA_OPERATION_BOUNDS.maxLat
     && event.center_lng >= KOREA_OPERATION_BOUNDS.minLng
     && event.center_lng <= KOREA_OPERATION_BOUNDS.maxLng
+}
+
+function hasDomesticRegionName(event: RiskEvent) {
+  return KOREA_REGION_KEYWORDS.some(keyword => event.region_name.includes(keyword))
+    && !NON_DOMESTIC_REGION_KEYWORDS.some(keyword => event.region_name.includes(keyword))
+}
+
+function isDomesticKoreanEvent(event: RiskEvent) {
+  return isInKoreaOperationBounds(event) && hasDomesticRegionName(event)
 }
 
 function makeIcon(event: RiskEvent) {
@@ -126,7 +145,7 @@ export default function MapMain() {
     }
   }, [])
 
-  const mapEvents = events.filter(isInKoreaOperationBounds)
+  const mapEvents = events.filter(isDomesticKoreanEvent)
 
   const filteredEvents = mapEvents.filter(e => {
     const matchCat = activeCategory === 'all' || e.disaster_type === activeCategory

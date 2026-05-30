@@ -6,7 +6,7 @@ const GLOBE_SIZE = 620
 const ALTITUDE = 1.9
 // autoRotateSpeed=2.0 → 30s/orbit(360°). 180°=15s → speed=4.0 → ~7.5s
 const AUTO_ROTATE_SPEED = -4.0
-const STOP_AFTER_MS = 4400
+const STOP_AFTER_MS = 2500
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -29,7 +29,7 @@ export default function Landing() {
     if (animStarted.current) return
     animStarted.current = true
 
-    const globe = globeRef.current
+    const globe = globeRef.current as GlobeMethods
     if (!globe) return
 
     globe.controls().enableZoom = false

@@ -78,6 +78,56 @@ function makeIcon(event: RiskEvent) {
   return L.divIcon({ html, className: '', iconSize: [40, 40], iconAnchor: [20, 20] })
 }
 
+function SmoothKeyboardPan() {
+  const map = useMap()
+
+  useEffect(() => {
+    const keys = new Set<string>()
+    let rafId = 0
+
+    const DIRS: Record<string, [number, number]> = {
+      ArrowLeft:  [-1,  0],
+      ArrowRight: [ 1,  0],
+      ArrowUp:    [ 0, -1],
+      ArrowDown:  [ 0,  1],
+    }
+
+    function step() {
+      if (keys.size === 0) return
+      let vx = 0, vy = 0
+      for (const key of keys) {
+        const d = DIRS[key]
+        if (d) { vx += d[0]; vy += d[1] }
+      }
+      map.panBy([vx * 8, vy * 8], { animate: false, noMoveStart: true })
+      rafId = requestAnimationFrame(step)
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (!(e.key in DIRS)) return
+      e.preventDefault()
+      const wasEmpty = keys.size === 0
+      keys.add(e.key)
+      if (wasEmpty) rafId = requestAnimationFrame(step)
+    }
+
+    function onKeyUp(e: KeyboardEvent) {
+      keys.delete(e.key)
+      if (keys.size === 0) cancelAnimationFrame(rafId)
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      cancelAnimationFrame(rafId)
+    }
+  }, [map])
+
+  return null
+}
+
 function MapFocusController({ event }: { event: RiskEvent | null }) {
   const map = useMap()
 
@@ -225,7 +275,7 @@ export default function MapMain() {
 
           <div style={s.sidebarDivider} />
 
-          <button style={s.catItem}>
+          <button style={s.catItem} onClick={() => window.open('https://www.safekorea.go.kr/safekorea-kor/acts/nacts/nationalActionTips.do?menuSn=4', '_blank')}>
             <span style={s.catIcon}>ℹ️</span>
             <span>Emergency Guide</span>
           </button>
@@ -256,6 +306,7 @@ export default function MapMain() {
             zoom={7}
             style={{ flex: 1, width: '100%' }}
             zoomControl
+            keyboard={false}
           >
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -264,6 +315,7 @@ export default function MapMain() {
               maxZoom={19}
             />
             <MapFocusController event={selectedEvent} />
+            <SmoothKeyboardPan />
             {filteredEvents.map(event => (
               <Marker
                 key={event.event_id}

@@ -122,7 +122,7 @@ export default function Landing() {
             <div style={{ position: 'relative', zIndex: 2, animation: 'fadeUp 3s 0s cubic-bezier(0.16,1,0.3,1) both' }}>
               <p style={s.desc}>
                 지금 발생한 재난과 현재 필요한<br />
-                도움을 <span style={{ color: '#818cf8' }}>지역별로 실시간 확인</span>하세요.
+                도움을 <span style={{ color: '#4ade80' }}>지역별로 실시간 확인</span>하세요.
               </p>
             </div>
             <div style={{ position: 'relative', zIndex: 2, animation: 'fadeUp 3s 0s cubic-bezier(0.16,1,0.3,1) both' }}>
@@ -216,17 +216,17 @@ const s: Record<string, React.CSSProperties> = {
   logoIcon: {
     width: 42,
     height: 42,
-    background: 'rgba(99,102,241,0.2)',
-    border: '1px solid rgba(99,102,241,0.5)',
+    background: 'rgba(22,163,74,0.2)',
+    border: '1px solid rgba(22,163,74,0.5)',
     borderRadius: 10,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 20,
-    color: '#818cf8',
+    color: '#4ade80',
   },
   logoText: {
-    color: '#818cf8',
+    color: '#4ade80',
     fontWeight: 800,
     fontSize: 30,
     letterSpacing: 0.3,
@@ -238,7 +238,7 @@ const s: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   ctaBtn: {
-    background: '#4f46e5',
+    background: '#16a34a',
     color: '#fff',
     border: 'none',
     borderRadius: 50,
@@ -247,6 +247,6 @@ const s: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     letterSpacing: 0.5,
     cursor: 'pointer',
-    boxShadow: '0 4px 28px rgba(79,70,229,0.45)',
+    boxShadow: '0 4px 28px rgba(22,163,74,0.45)',
   },
 }

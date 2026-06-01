@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { NavigateFunction } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
@@ -151,6 +151,30 @@ export default function MapMain() {
   const [events, setEvents] = useState<RiskEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(true)
   const [eventsError, setEventsError] = useState<string | null>(null)
+  const [panelWidth, setPanelWidth] = useState(300)
+  const isResizing = useRef(false)
+  const resizeStartX = useRef(0)
+  const resizeStartWidth = useRef(0)
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!isResizing.current) return
+      const delta = resizeStartX.current - e.clientX
+      setPanelWidth(Math.min(520, Math.max(200, resizeStartWidth.current + delta)))
+    }
+    function onMouseUp() {
+      if (!isResizing.current) return
+      isResizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -344,11 +368,25 @@ export default function MapMain() {
         </div>
 
         {/* 우측 패널 */}
-        {selectedEvent ? (
-          <EventPanel event={selectedEvent} onClose={() => setSelectedEvent(null)} navigate={navigate} />
-        ) : (
-          <AlertListPanel events={filteredEvents} onSelect={setSelectedEvent} />
-        )}
+        <div style={{ position: 'relative', width: panelWidth, flexShrink: 0, display: 'flex' }}>
+          {/* 드래그 핸들 */}
+          <div
+            style={s.resizeHandle}
+            onMouseDown={e => {
+              isResizing.current = true
+              resizeStartX.current = e.clientX
+              resizeStartWidth.current = panelWidth
+              document.body.style.cursor = 'col-resize'
+              document.body.style.userSelect = 'none'
+              e.preventDefault()
+            }}
+          />
+          {selectedEvent ? (
+            <EventPanel event={selectedEvent} onClose={() => setSelectedEvent(null)} navigate={navigate} />
+          ) : (
+            <AlertListPanel events={filteredEvents} onSelect={setSelectedEvent} />
+          )}
+        </div>
       </div>
     </div>
   )
@@ -497,7 +535,8 @@ const s: Record<string, React.CSSProperties> = {
   legendItem: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#64748b', letterSpacing: 0.5 },
   legendDot: { width: 8, height: 8, borderRadius: '50%', display: 'inline-block' },
   legendSep: { flex: 1 },
-  rightPanel: { width: 300, background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', flexShrink: 0 },
+  rightPanel: { flex: 1, background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  resizeHandle: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 5, cursor: 'col-resize', zIndex: 10, background: 'transparent', transition: 'background 0.15s' },
   panelHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.07)' },
   panelBadgeGreen: { fontSize: 11, color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 4, padding: '3px 8px', fontWeight: 600, letterSpacing: 0.5 },
   panelCount: { fontSize: 12, color: '#64748b' },

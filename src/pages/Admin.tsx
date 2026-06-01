@@ -181,27 +181,6 @@ export default function Admin() {
 
         {/* 우측 패널 */}
         <div style={s.sideCol}>
-          {/* 최근 활동 로그 */}
-          <div style={s.sideCard}>
-            <div style={s.sideCardHeader}>
-              <span style={s.sideCardTitle}>🕐 최근 활동 로그</span>
-              <span style={s.sideCardLink}>전체보기</span>
-            </div>
-            {[
-              { user: '김철수', action: '사건 생성: 중부 지방 집중 호우', time: '오전 10:45', avatar: '김' },
-              { user: 'Jane Doe', action: '상태 변경: 그리스 열파 (Closed)', time: '오전 09:20', avatar: 'J' },
-              { user: '이영희', action: '뉴스 추가: 칠레 중부 산불', time: '어제 22:15', avatar: '이' },
-            ].map((log, i) => (
-              <div key={i} style={s.logRow}>
-                <div style={s.logAvatar}>{log.avatar}</div>
-                <div>
-                  <div style={s.logUser}>{log.user} <span style={{ color: '#475569', fontWeight: 400 }}>{log.time}</span></div>
-                  <div style={s.logAction}>{log.action}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* 보안 수칙 */}
           <div style={s.sideCard}>
             <div style={s.sideCardHeader}>

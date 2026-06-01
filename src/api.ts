@@ -80,3 +80,25 @@ export async function getOrgHistory(orgId: string): Promise<DonationRecord[]> {
 
   return response.json() as Promise<DonationRecord[]>
 }
+
+export interface IngestionRun {
+  run_id: string
+  started_at: string
+  finished_at: string
+  status: 'success' | 'partial_failure' | 'failed'
+  sources: string[]
+  inserted_count: number
+  updated_count: number
+  skipped_count: number
+  error_message: string | null
+}
+
+export async function getIngestionStatus(): Promise<{ last_run: IngestionRun | null }> {
+  const response = await fetch(`${API_BASE_URL}/ingestion/status`, NO_STORE)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ingestion status: ${response.status}`)
+  }
+
+  return response.json()
+}

@@ -1,82 +1,110 @@
 import type { DonationRecord, OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } from './types'
+import {
+  mockArticles,
+  mockDonationHistory,
+  mockEvents,
+  mockOfficialUpdates,
+  mockOrganizations,
+} from './data/mockData'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
 const NO_STORE: RequestInit = { cache: 'no-store' }
+const ENABLE_MOCK_FALLBACK = import.meta.env.VITE_ENABLE_MOCK_FALLBACK !== 'false'
 
-export async function getEvents(): Promise<RiskEvent[]> {
-  const response = await fetch(`${API_BASE_URL}/events`, NO_STORE)
+function warnFallback(resource: string, error: unknown) {
+  if (!ENABLE_MOCK_FALLBACK) return
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch events: ${response.status}`)
-  }
-
-  return response.json() as Promise<RiskEvent[]>
+  const message = error instanceof Error ? error.message : String(error)
+  console.warn(`[Relief Korea] ${resource} API unavailable. Using mock data.`, message)
 }
 
-export async function getEvent(eventId: string): Promise<RiskEvent> {
-  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}`, NO_STORE)
+async function fetchJson<T>(path: string, resource: string, fallback: () => T): Promise<T> {
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, NO_STORE)
 
-  if (response.status === 404) {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${resource}: ${response.status}`)
+    }
+
+    return response.json() as Promise<T>
+  } catch (error) {
+    if (!ENABLE_MOCK_FALLBACK) {
+      throw error
+    }
+
+    warnFallback(resource, error)
+    return fallback()
+  }
+}
+
+function mockEventById(eventId: string): RiskEvent {
+  const event = mockEvents.find(item => item.event_id === eventId)
+
+  if (!event) {
     throw new Error('Event not found')
   }
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch event: ${response.status}`)
-  }
-
-  return response.json() as Promise<RiskEvent>
+  return event
 }
 
-export async function getEventArticles(eventId: string): Promise<RelatedArticle[]> {
-  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/articles`, NO_STORE)
+function mockOrgById(orgId: string): OrganizationAction {
+  const organization = mockOrganizations.find(item => item.org_id === orgId)
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch event articles: ${response.status}`)
-  }
-
-  return response.json() as Promise<RelatedArticle[]>
-}
-
-export async function getEventUpdates(eventId: string): Promise<OfficialUpdate[]> {
-  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/updates`, NO_STORE)
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch event updates: ${response.status}`)
-  }
-
-  return response.json() as Promise<OfficialUpdate[]>
-}
-
-export async function getEventOrganizations(eventId: string): Promise<OrganizationAction[]> {
-  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/orgs`, NO_STORE)
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch event organizations: ${response.status}`)
-  }
-
-  return response.json() as Promise<OrganizationAction[]>
-}
-
-export async function getOrg(orgId: string): Promise<OrganizationAction> {
-  const response = await fetch(`${API_BASE_URL}/orgs/${encodeURIComponent(orgId)}`, NO_STORE)
-
-  if (response.status === 404) {
+  if (!organization) {
     throw new Error('Organization not found')
   }
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch organization: ${response.status}`)
-  }
+  return organization
+}
 
-  return response.json() as Promise<OrganizationAction>
+export async function getEvents(): Promise<RiskEvent[]> {
+  return fetchJson('/events', 'events', () => mockEvents)
+}
+
+export async function getEvent(eventId: string): Promise<RiskEvent> {
+  return fetchJson(
+    `/events/${encodeURIComponent(eventId)}`,
+    'event',
+    () => mockEventById(eventId),
+  )
+}
+
+export async function getEventArticles(eventId: string): Promise<RelatedArticle[]> {
+  return fetchJson(
+    `/events/${encodeURIComponent(eventId)}/articles`,
+    'event articles',
+    () => mockArticles.filter(item => item.event_id === eventId),
+  )
+}
+
+export async function getEventUpdates(eventId: string): Promise<OfficialUpdate[]> {
+  return fetchJson(
+    `/events/${encodeURIComponent(eventId)}/updates`,
+    'event updates',
+    () => mockOfficialUpdates.filter(item => item.event_id === eventId),
+  )
+}
+
+export async function getEventOrganizations(eventId: string): Promise<OrganizationAction[]> {
+  return fetchJson(
+    `/events/${encodeURIComponent(eventId)}/orgs`,
+    'event organizations',
+    () => mockOrganizations.filter(item => item.event_id === eventId),
+  )
+}
+
+export async function getOrg(orgId: string): Promise<OrganizationAction> {
+  return fetchJson(
+    `/orgs/${encodeURIComponent(orgId)}`,
+    'organization',
+    () => mockOrgById(orgId),
+  )
 }
 
 export async function getOrgHistory(orgId: string): Promise<DonationRecord[]> {
-  const response = await fetch(`${API_BASE_URL}/orgs/${encodeURIComponent(orgId)}/history`, NO_STORE)
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch organization history: ${response.status}`)
-  }
-
-  return response.json() as Promise<DonationRecord[]>
+  return fetchJson(
+    `/orgs/${encodeURIComponent(orgId)}/history`,
+    'organization history',
+    () => mockDonationHistory.filter(item => item.org_id === orgId),
+  )
 }

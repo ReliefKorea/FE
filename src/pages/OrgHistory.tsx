@@ -6,6 +6,63 @@ import {
 } from '../data/mockData'
 import type { DonationRecord, OrganizationAction } from '../types'
 
+const trustConfig = {
+  strong: { label: '근거 충분', color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
+  moderate: { label: '근거 보통', color: '#38bdf8', bg: 'rgba(56,189,248,0.1)' },
+  limited: { label: '근거 제한', color: '#facc15', bg: 'rgba(250,204,21,0.1)' },
+  needs_review: { label: '근거 약함', color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
+} as const
+
+const spendingDecisionConfig = {
+  strong: {
+    label: '사용처 판단 쉬움',
+    color: '#4ade80',
+    bg: 'rgba(74,222,128,0.1)',
+    description: '공개 수치와 근거 링크가 충분해 후원금 사용 흐름을 비교적 명확히 확인할 수 있습니다.',
+  },
+  moderate: {
+    label: '사용처 근거 보통',
+    color: '#38bdf8',
+    bg: 'rgba(56,189,248,0.1)',
+    description: '후원금 사용 목적과 일부 공개 지표가 확인되어 기본 판단이 가능합니다.',
+  },
+  limited: {
+    label: '사용처 근거 제한',
+    color: '#facc15',
+    bg: 'rgba(250,204,21,0.1)',
+    description: '공개 근거는 있으나 금액, 수혜 규모, 사용처 지표가 충분하지 않습니다.',
+  },
+  needs_review: {
+    label: '공개 지표 부족',
+    color: '#f97316',
+    bg: 'rgba(249,115,22,0.1)',
+    description: '후원금 사용을 판단할 공개 수치와 근거 링크가 부족합니다.',
+  },
+} as const
+
+function beneficiaryUnit(label?: string) {
+  if (!label) return '명'
+  if (label.includes('세대')) return '세대'
+  return ''
+}
+
+function parseWonAmount(amount?: string) {
+  if (!amount) return 0
+  const digits = amount.replace(/[^\d]/g, '')
+  return digits ? Number(digits) : 0
+}
+
+function getSpendingDecision(org: OrganizationAction, records: DonationRecord[]) {
+  const trustScore = org.trust_score ?? 0
+  const evidenceCount = (org.evidence_sources?.length ?? 0) + records.filter(record => record.evidence_url).length
+  const hasPublicMoneyUse = records.some(record => record.amount || record.beneficiaries) || Boolean(org.finance_summary)
+
+  if (trustScore >= 75 && evidenceCount >= 3 && hasPublicMoneyUse) return spendingDecisionConfig.strong
+  if (trustScore >= 60 && evidenceCount >= 1 && hasPublicMoneyUse) return spendingDecisionConfig.moderate
+  if (trustScore >= 35 && (evidenceCount > 0 || hasPublicMoneyUse)) return spendingDecisionConfig.limited
+  return spendingDecisionConfig.needs_review
+}
+
 export default function OrgHistory() {
   const { orgId } = useParams()
   const navigate = useNavigate()
@@ -83,16 +140,26 @@ export default function OrgHistory() {
     )
   }
 
-  const totalAmount = records
-    .filter(r => r.amount)
-    .reduce((sum, r) => sum + parseInt(r.amount!.replace(/[₩,]/g, '')), 0)
-  const totalBeneficiaries = records
-    .filter(r => r.beneficiaries)
+  const totalAmount = records.reduce((sum, r) => sum + parseWonAmount(r.amount), 0)
+  const beneficiaryRecords = records.filter(r => typeof r.beneficiaries === 'number')
+  const totalBeneficiaries = beneficiaryRecords
     .reduce((sum, r) => sum + (r.beneficiaries ?? 0), 0)
+  const beneficiaryLabels = new Set(beneficiaryRecords.map(r => r.beneficiaries_label ?? '수혜 인원'))
+  const hasMixedBeneficiaryMetrics = beneficiaryLabels.size > 1
+  const totalBeneficiariesLabel = hasMixedBeneficiaryMetrics
+    ? '공개 규모 항목'
+    : beneficiaryRecords[0]?.beneficiaries_label
+  const totalBeneficiariesUnit = beneficiaryUnit(totalBeneficiariesLabel)
+  const beneficiaryStatValue = hasMixedBeneficiaryMetrics
+    ? `${beneficiaryRecords.length}건`
+    : `${totalBeneficiaries.toLocaleString()}${totalBeneficiariesUnit}`
   const oldestRecordYear = records.length > 0
     ? new Date(records[records.length - 1].date).getFullYear()
     : null
   const activityStartYear = oldestRecordYear ? `${oldestRecordYear}년~` : '-'
+  const evidenceCount = (org.evidence_sources?.length ?? 0) + records.filter(record => record.evidence_url).length
+  const moneyUseRecords = records.filter(record => record.amount || record.beneficiaries).length
+  const spendingDecision = getSpendingDecision(org, records)
 
   return (
     <div style={s.root}>
@@ -126,9 +193,24 @@ export default function OrgHistory() {
           <div style={s.heroMeta}>🤖 AI 후원 히스토리</div>
           <h1 style={s.heroTitle}>{org.org_name}</h1>
           <div style={s.heroSub}>{org.activity_region} · {org.activity_type}</div>
-          {org.verified_by_admin && (
-            <div style={s.heroBadge}>✓ 관리자 인증 단체</div>
-          )}
+          <div style={s.heroBadgeRow}>
+            {org.verified_by_admin && (
+              <div style={s.heroBadge}>✓ 공식 채널 확인</div>
+            )}
+            {org.trust_level && (
+              <div
+                style={{
+                  ...s.heroTrustBadge,
+                  color: trustConfig[org.trust_level].color,
+                  background: trustConfig[org.trust_level].bg,
+                  border: `1px solid ${trustConfig[org.trust_level].color}44`,
+                }}
+              >
+                {trustConfig[org.trust_level].label}
+                {typeof org.trust_score === 'number' ? ` ${org.trust_score}` : ''}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -141,12 +223,12 @@ export default function OrgHistory() {
         <div style={s.statDivider} />
         <div style={s.statItem}>
           <div style={s.statValue}>₩{totalAmount.toLocaleString()}</div>
-          <div style={s.statLabel}>누적 후원금</div>
+          <div style={s.statLabel}>공개 금액 지표</div>
         </div>
         <div style={s.statDivider} />
         <div style={s.statItem}>
-          <div style={s.statValue}>{totalBeneficiaries.toLocaleString()}명</div>
-          <div style={s.statLabel}>총 수혜 인원</div>
+          <div style={s.statValue}>{beneficiaryStatValue}</div>
+          <div style={s.statLabel}>{totalBeneficiariesLabel ? '공개 규모 지표' : '수혜·참여 지표'}</div>
         </div>
         <div style={s.statDivider} />
         <div style={s.statItem}>
@@ -157,16 +239,73 @@ export default function OrgHistory() {
 
       {/* 본문 */}
       <div style={s.body}>
-        {/* AI 감성 멘트 */}
+        <div style={s.decisionCard}>
+          <div style={s.decisionTop}>
+            <div>
+              <div style={s.decisionEyebrow}>후원금 사용 판단</div>
+              <div style={{ ...s.decisionLabel, color: spendingDecision.color }}>{spendingDecision.label}</div>
+            </div>
+            <div style={{ ...s.decisionScore, color: spendingDecision.color, background: spendingDecision.bg }}>
+              {typeof org.trust_score === 'number' ? `${org.trust_score}/100` : 'N/A'}
+            </div>
+          </div>
+          <p style={s.decisionDesc}>{spendingDecision.description}</p>
+          <div style={s.decisionGrid}>
+            <div style={s.decisionMetric}>
+              <span style={s.decisionMetricLabel}>사용처 지표</span>
+              <strong style={s.decisionMetricValue}>{moneyUseRecords}건</strong>
+            </div>
+            <div style={s.decisionMetric}>
+              <span style={s.decisionMetricLabel}>근거 링크</span>
+              <strong style={s.decisionMetricValue}>{evidenceCount}개</strong>
+            </div>
+            <div style={s.decisionMetric}>
+              <span style={s.decisionMetricLabel}>후원 채널</span>
+              <strong style={s.decisionMetricValue}>{org.donation_link ? '확인' : '없음'}</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* AI 분석 */}
         <div style={s.aiCard}>
           <div style={s.aiCardHeader}>
             <span style={s.aiIcon}>🤖</span>
-            <span style={s.aiTitle}>AI 분석 멘트</span>
+            <span style={s.aiTitle}>AI 근거 분석 리포트</span>
             <span style={s.aiBadge}>Beta</span>
           </div>
           <p style={s.aiText}>
-            {org.ai_message ?? `${org.org_name}은(는) 재난 현장에서 가장 먼저 손을 내미는 단체입니다. 수년간의 꾸준한 활동을 통해 수천 명의 이재민에게 따뜻한 도움을 전해왔습니다. 그들의 헌신은 단순한 후원을 넘어, 무너진 일상을 다시 세우는 힘이 되고 있습니다.`}
+            {org.report_summary ?? org.ai_message ?? `${org.org_name}은(는) 재난 현장 지원 단체로 등록되어 있습니다. AI가 활동 근거와 후원 채널을 분석해 요약했습니다.`}
           </p>
+          {org.finance_summary && (
+            <div style={s.aiSubBlock}>
+              <div style={s.aiSubTitle}>돈이 쓰이는 흐름</div>
+              <div style={s.aiSubText}>{org.finance_summary}</div>
+            </div>
+          )}
+          {org.risk_notes && (
+            <div style={s.aiSubBlock}>
+              <div style={s.aiSubTitle}>확인 기준</div>
+              <div style={s.aiSubText}>{org.risk_notes}</div>
+            </div>
+          )}
+          {org.evidence_sources && org.evidence_sources.length > 0 && (
+            <div style={s.evidencePanel}>
+              {org.evidence_sources.map((source, index) => (
+                <a
+                  key={`${source.url}-${index}`}
+                  href={source.url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={s.evidenceLink}
+                  onClick={event => {
+                    if (!source.url) event.preventDefault()
+                  }}
+                >
+                  근거 {index + 1}. {source.title}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 타임라인 */}
@@ -207,11 +346,16 @@ export default function OrgHistory() {
                       )}
                       {rec.beneficiaries && (
                         <div style={s.timelineStat}>
-                          <span style={s.timelineStatLabel}>수혜 인원</span>
-                          <span style={s.timelineStatValue}>{rec.beneficiaries.toLocaleString()}명</span>
+                          <span style={s.timelineStatLabel}>{rec.beneficiaries_label ?? '수혜 인원'}</span>
+                          <span style={s.timelineStatValue}>{rec.beneficiaries.toLocaleString()}{beneficiaryUnit(rec.beneficiaries_label)}</span>
                         </div>
                       )}
                     </div>
+                    {rec.evidence_url && (
+                      <a href={rec.evidence_url} target="_blank" rel="noopener noreferrer" style={s.timelineEvidenceLink}>
+                        근거: {rec.evidence_title ?? rec.evidence_source ?? '공개 자료'} ↗
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
@@ -250,19 +394,36 @@ const s: Record<string, React.CSSProperties> = {
   heroMeta: { fontSize: 12, color: '#818cf8', fontWeight: 600, letterSpacing: 1, marginBottom: 8 },
   heroTitle: { fontSize: 34, fontWeight: 900, color: '#f1f5f9', margin: '0 0 8px', letterSpacing: 0.3 },
   heroSub: { fontSize: 14, color: '#94a3b8', marginBottom: 12 },
+  heroBadgeRow: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' },
   heroBadge: { display: 'inline-block', fontSize: 12, color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 20, padding: '4px 12px', fontWeight: 600 },
+  heroTrustBadge: { display: 'inline-block', fontSize: 12, borderRadius: 20, padding: '4px 12px', fontWeight: 700 },
   statsBar: { display: 'flex', alignItems: 'center', background: '#0d1117', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 40px', flexShrink: 0 },
   statItem: { padding: '18px 32px', textAlign: 'center' },
   statValue: { fontSize: 20, fontWeight: 800, color: '#e2e8f0', marginBottom: 4 },
   statLabel: { fontSize: 11, color: '#475569', letterSpacing: 0.5 },
   statDivider: { width: 1, height: 40, background: 'rgba(255,255,255,0.07)' },
   body: { flex: 1, maxWidth: 860, width: '100%', margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 28 },
+  decisionCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '18px 22px', boxShadow: '0 18px 50px rgba(0,0,0,0.18)' },
+  decisionTop: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 10 },
+  decisionEyebrow: { fontSize: 11, color: '#64748b', fontWeight: 800, letterSpacing: 1, marginBottom: 5 },
+  decisionLabel: { fontSize: 24, fontWeight: 900, letterSpacing: 0 },
+  decisionScore: { borderRadius: 8, padding: '8px 12px', fontSize: 15, fontWeight: 900, whiteSpace: 'nowrap' },
+  decisionDesc: { fontSize: 13, color: '#cbd5e1', lineHeight: 1.65, margin: '0 0 14px' },
+  decisionGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 },
+  decisionMetric: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, padding: '10px 12px', minWidth: 0 },
+  decisionMetricLabel: { display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 },
+  decisionMetricValue: { display: 'block', fontSize: 15, color: '#e2e8f0', overflowWrap: 'anywhere' },
   aiCard: { background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 14, padding: '20px 24px' },
   aiCardHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 },
   aiIcon: { fontSize: 18 },
   aiTitle: { fontSize: 14, fontWeight: 700, color: '#a5b4fc' },
   aiBadge: { fontSize: 10, color: '#818cf8', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 4, padding: '2px 7px', fontWeight: 600 },
   aiText: { fontSize: 14, color: '#cbd5e1', lineHeight: 1.8, margin: 0 },
+  aiSubBlock: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', marginTop: 12 },
+  aiSubTitle: { fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 5 },
+  aiSubText: { fontSize: 13, color: '#94a3b8', lineHeight: 1.6 },
+  evidencePanel: { display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 },
+  evidenceLink: { fontSize: 12, color: '#818cf8', textDecoration: 'none', overflowWrap: 'anywhere' },
   timelineSection: {},
   sectionTitle: { fontSize: 15, fontWeight: 700, color: '#e2e8f0', marginBottom: 20 },
   timeline: { display: 'flex', flexDirection: 'column', gap: 0 },
@@ -280,6 +441,7 @@ const s: Record<string, React.CSSProperties> = {
   timelineStat: { display: 'flex', flexDirection: 'column', gap: 2 },
   timelineStatLabel: { fontSize: 10, color: '#475569', letterSpacing: 0.5 },
   timelineStatValue: { fontSize: 14, fontWeight: 700, color: '#4ade80' },
+  timelineEvidenceLink: { display: 'inline-block', marginTop: 12, fontSize: 12, color: '#818cf8', textDecoration: 'none', overflowWrap: 'anywhere' },
   footer: { padding: '12px 28px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0d1117', flexShrink: 0 },
   footerLink: { fontSize: 11, color: '#334155', cursor: 'pointer' },
 }

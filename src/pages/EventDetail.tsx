@@ -9,6 +9,31 @@ import type { OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } fr
 
 const ARTICLE_REFRESH_INTERVAL_MS = 30000
 
+const trustConfig = {
+  strong: { label: '근거 충분', color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
+  moderate: { label: '근거 보통', color: '#38bdf8', bg: 'rgba(56,189,248,0.1)' },
+  limited: { label: '근거 제한', color: '#facc15', bg: 'rgba(250,204,21,0.1)' },
+  needs_review: { label: '근거 약함', color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
+} as const
+
+const moneySignalConfig = {
+  strong: { label: '사용처 근거 충분', color: '#4ade80', bg: 'rgba(74,222,128,0.08)' },
+  moderate: { label: '사용처 근거 보통', color: '#38bdf8', bg: 'rgba(56,189,248,0.08)' },
+  limited: { label: '사용처 근거 제한', color: '#facc15', bg: 'rgba(250,204,21,0.08)' },
+  needs_review: { label: '공개 지표 부족', color: '#f97316', bg: 'rgba(249,115,22,0.08)' },
+} as const
+
+function moneySignal(org: OrganizationAction) {
+  const score = org.trust_score ?? 0
+  const evidenceCount = org.evidence_sources?.length ?? 0
+  const hasMoneyUse = Boolean(org.finance_summary)
+
+  if (score >= 75 && evidenceCount >= 2 && hasMoneyUse) return moneySignalConfig.strong
+  if (score >= 60 && evidenceCount >= 1 && hasMoneyUse) return moneySignalConfig.moderate
+  if (score >= 35 && (evidenceCount > 0 || hasMoneyUse)) return moneySignalConfig.limited
+  return moneySignalConfig.needs_review
+}
+
 export default function EventDetail() {
   const { eventId } = useParams()
   const navigate = useNavigate()
@@ -405,11 +430,79 @@ export default function EventDetail() {
                     )}
                   </div>
                   <div style={s.orgCardBody}>
-                    <div style={s.orgName}>{org.org_name}</div>
-                    {org.verified_by_admin && (
-                      <div style={s.verifiedBadge}>✓ 관리자 인증</div>
+                    {(() => {
+                      const signal = moneySignal(org)
+                      const evidenceCount = org.evidence_sources?.length ?? 0
+
+                      return (
+                        <div style={{ ...s.moneySignalPanel, borderColor: `${signal.color}33`, background: signal.bg }}>
+                          <div style={s.moneySignalTop}>
+                            <span style={s.moneySignalLabel}>후원금 사용 판단</span>
+                            <strong style={{ ...s.moneySignalValue, color: signal.color }}>{signal.label}</strong>
+                          </div>
+                          <div style={s.moneySignalMeta}>
+                            <span>근거 {evidenceCount}개</span>
+                            <span>채널 {org.donation_link ? '확인' : '없음'}</span>
+                            {typeof org.trust_score === 'number' && <span>점수 {org.trust_score}</span>}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                    <div style={s.orgTitleRow}>
+                      <div style={s.orgName}>{org.org_name}</div>
+                      {org.trust_level && (
+                        <span
+                          style={{
+                            ...s.trustBadge,
+                            color: trustConfig[org.trust_level].color,
+                            background: trustConfig[org.trust_level].bg,
+                            border: `1px solid ${trustConfig[org.trust_level].color}44`,
+                          }}
+                        >
+                          {trustConfig[org.trust_level].label}
+                          {typeof org.trust_score === 'number' ? ` ${org.trust_score}` : ''}
+                        </span>
+                      )}
+                    </div>
+                    <div style={s.orgBadges}>
+                      {org.verified_by_admin && (
+                        <span style={s.verifiedBadge}>✓ 공식 채널 확인</span>
+                      )}
+                      {org.ai_report_id && (
+                        <span style={s.aiReportBadge}>AI 근거 리포트</span>
+                      )}
+                    </div>
+                    <p style={s.orgDesc}>{org.report_summary ?? org.ai_message ?? org.activity_summary}</p>
+                    {org.finance_summary && (
+                      <div style={s.reportBlock}>
+                        <div style={s.reportLabel}>돈이 쓰이는 흐름</div>
+                        <div style={s.reportText}>{org.finance_summary}</div>
+                      </div>
                     )}
-                    <p style={s.orgDesc}>{org.ai_message ?? org.activity_summary}</p>
+                    {org.risk_notes && (
+                      <div style={s.reportBlock}>
+                        <div style={s.reportLabel}>확인 기준</div>
+                        <div style={s.reportText}>{org.risk_notes}</div>
+                      </div>
+                    )}
+                    {org.evidence_sources && org.evidence_sources.length > 0 && (
+                      <div style={s.evidenceList}>
+                        {org.evidence_sources.slice(0, 3).map((source, index) => (
+                          <a
+                            key={`${source.url}-${index}`}
+                            href={source.url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={s.evidenceLink}
+                            onClick={event => {
+                              if (!source.url) event.preventDefault()
+                            }}
+                          >
+                            근거 {index + 1}: {source.title}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                     {org.donation_link && (
                       <a href={org.donation_link} target="_blank" rel="noopener noreferrer" style={s.donateBtn}>
                         후원하기 ↗
@@ -432,8 +525,8 @@ export default function EventDetail() {
             <div style={{ ...s.verifiedNote, marginTop: 12, flexShrink: 0 }}>
               <span style={{ fontSize: 16 }}>🛡️</span>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 12, color: '#4ade80', marginBottom: 4 }}>Verified Actions</div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>All donation links are verified by the Ministry of Interior and Safety.</div>
+                <div style={{ fontWeight: 600, fontSize: 12, color: '#4ade80', marginBottom: 4 }}>AI Evidence Checked</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>AI가 공개 자료를 수집하고 근거 강도, 활동 적합성, 후원 채널을 분석해 카드를 자동 공개합니다.</div>
               </div>
             </div>
           </div>
@@ -510,9 +603,23 @@ const s: Record<string, React.CSSProperties> = {
   orgImageOverlay: { position: 'absolute', inset: 0, background: 'rgba(8,11,20,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   orgHistoryBtn: { background: 'rgba(99,102,241,0.25)', border: '1px solid rgba(99,102,241,0.5)', borderRadius: 8, padding: '9px 18px', color: '#c7d2fe', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   orgCardBody: { padding: 14 },
+  moneySignalPanel: { border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 10px', marginBottom: 10 },
+  moneySignalTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
+  moneySignalLabel: { fontSize: 10, color: '#94a3b8', fontWeight: 800 },
+  moneySignalValue: { fontSize: 12, fontWeight: 900, textAlign: 'right' },
+  moneySignalMeta: { display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 10, color: '#64748b' },
+  orgTitleRow: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
   orgName: { fontSize: 13, fontWeight: 600, color: '#e2e8f0' },
-  verifiedBadge: { fontSize: 10, color: '#4ade80', marginTop: 2, marginBottom: 8 },
+  orgBadges: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 },
+  verifiedBadge: { fontSize: 10, color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: 4, padding: '2px 6px' },
+  aiReportBadge: { fontSize: 10, color: '#93c5fd', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)', borderRadius: 4, padding: '2px 6px' },
+  trustBadge: { flexShrink: 0, fontSize: 10, borderRadius: 4, padding: '3px 6px', fontWeight: 700 },
   orgDesc: { fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: '0 0 10px' },
+  reportBlock: { background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '8px 10px', marginBottom: 8 },
+  reportLabel: { fontSize: 10, color: '#94a3b8', fontWeight: 700, marginBottom: 4 },
+  reportText: { fontSize: 11, color: '#64748b', lineHeight: 1.45 },
+  evidenceList: { display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 },
+  evidenceLink: { fontSize: 11, color: '#818cf8', textDecoration: 'none', lineHeight: 1.35, overflowWrap: 'anywhere' },
   donateBtn: { display: 'block', textAlign: 'center', background: '#16a34a', border: 'none', borderRadius: 6, padding: '9px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', transition: 'opacity 0.2s' },
   verifiedNote: { background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 10, padding: 14, display: 'flex', gap: 10, alignItems: 'flex-start' },
   footer: { padding: '12px 28px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0d1117', flexShrink: 0 },

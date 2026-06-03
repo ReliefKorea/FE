@@ -2,6 +2,13 @@ export type DisasterType = 'wildfire' | 'heavy_rain' | 'typhoon' | 'earthquake'
 export type Severity = 'low' | 'medium' | 'high' | 'critical'
 export type EventStatus = 'active' | 'monitoring' | 'recovery' | 'closed'
 export type HelpStatus = 'none' | 'donation_available' | 'volunteer_available' | 'both_available'
+export type TrustLevel = 'strong' | 'moderate' | 'limited' | 'needs_review'
+
+export interface EvidenceSource {
+  title: string
+  url: string
+  source_type: string
+}
 
 export interface RiskEvent {
   event_id: string
@@ -48,9 +55,13 @@ export interface DonationRecord {
   title: string
   amount?: string
   beneficiaries?: number
+  beneficiaries_label?: string
   region: string
   description: string
   disaster_type?: DisasterType
+  evidence_title?: string
+  evidence_url?: string
+  evidence_source?: string
 }
 
 export interface OrganizationAction {
@@ -66,4 +77,12 @@ export interface OrganizationAction {
   evidence_note: string
   verified_by_admin: boolean
   last_checked_at: string
+  ai_report_id?: string
+  trust_level?: TrustLevel
+  trust_score?: number
+  report_summary?: string
+  finance_summary?: string
+  risk_notes?: string
+  evidence_sources?: EvidenceSource[]
+  report_generated_at?: string
 }

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
-const DEV_PASSWORD = import.meta.env.VITE_ADMIN_DEV_PASSWORD ?? 'admin1234'
+const INVALID_CREDENTIALS_MESSAGE = '?꾩씠???먮뒗 鍮꾨?踰덊샇媛 ?щ컮瑜댁? ?딆뒿?덈떎.'
+const LOGIN_SERVER_ERROR_MESSAGE = '濡쒓렇???쒕쾭???곌껐?????놁뒿?덈떎.'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -28,30 +29,24 @@ export default function Login() {
 
       if (res.ok) {
         const { token } = await res.json()
+
+        if (typeof token !== 'string' || !token) {
+          throw new Error('invalid_token_response')
+        }
+
         localStorage.setItem('admin_token', token)
         navigate(from, { replace: true })
         return
       }
 
-      // 401 = 실제 인증 실패
       if (res.status === 401) {
-        const data = await res.json().catch(() => ({}))
-        setError(data.error ?? '아이디 또는 비밀번호가 올바르지 않습니다.')
+        setError(INVALID_CREDENTIALS_MESSAGE)
         return
       }
 
-      // 404 등 = auth API 미구현 → dev 비밀번호 체크
-      throw new Error('api_not_ready')
+      setError(LOGIN_SERVER_ERROR_MESSAGE)
     } catch {
-      // 네트워크 오류 또는 auth API 미구현 시 임시 비밀번호로 대체
-      if (password === DEV_PASSWORD) {
-        const fakeToken = btoa(JSON.stringify({ alg: 'none' })) + '.' +
-          btoa(JSON.stringify({ username, exp: Math.floor(Date.now() / 1000) + 86400 })) + '.dev'
-        localStorage.setItem('admin_token', fakeToken)
-        navigate(from, { replace: true })
-      } else {
-        setError('비밀번호가 올바르지 않습니다.')
-      }
+      setError(LOGIN_SERVER_ERROR_MESSAGE)
     } finally {
       setLoading(false)
     }

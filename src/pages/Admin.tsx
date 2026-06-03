@@ -62,6 +62,11 @@ export default function Admin() {
     updated: 86,
   }
 
+  function handleLogout() {
+    localStorage.removeItem('admin_token')
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div style={s.root}>
       {/* 헤더 */}
@@ -78,6 +83,7 @@ export default function Admin() {
         </div>
         <div style={s.headerRight}>
           <button style={s.viewMapBtn} onClick={() => navigate('/map')}>↗ 공개용 지도 보기</button>
+          <button style={s.logoutBtn} onClick={handleLogout}>로그아웃</button>
           <button style={s.createBtn} onClick={() => setTab('create')}>+ 새 경보 생성</button>
         </div>
       </header>
@@ -312,6 +318,7 @@ const s: Record<string, React.CSSProperties> = {
   navTabActive: { background: 'rgba(22,163,74,0.12)', color: '#4ade80' },
   headerRight: { display: 'flex', gap: 10 },
   viewMapBtn: { background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' },
+  logoutBtn: { background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' },
   createBtn: { background: '#16a34a', border: 'none', borderRadius: 6, padding: '6px 16px', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' },
   titleArea: { padding: '24px 28px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' },
   pageTitle: { fontSize: 24, fontWeight: 700, color: '#f1f5f9', margin: '0 0 6px' },

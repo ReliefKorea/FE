@@ -32,6 +32,10 @@ const CATEGORIES: { key: DisasterType | 'all'; label: string; icon: string }[] =
 
 const EVENT_REFRESH_INTERVAL_MS = 30000
 
+type MapCluster = {
+  getChildCount(): number
+}
+
 const KOREA_OPERATION_BOUNDS = {
   minLat: 32,
   maxLat: 43,
@@ -442,7 +446,7 @@ export default function MapMain() {
               chunkedLoading
               disableClusteringAtZoom={10}
               maxClusterRadius={60}
-              iconCreateFunction={(cluster) => {
+              iconCreateFunction={(cluster: MapCluster) => {
                 const count = cluster.getChildCount()
                 return L.divIcon({
                   html: `<div style="

@@ -32,12 +32,14 @@ export default function Landing() {
     const globe = globeRef.current as GlobeMethods
     if (!globe) return
 
-    globe.controls().enableZoom = false
-    globe.controls().enableRotate = false
-    globe.controls().enablePan = false
+    const controls = globe.controls()
+
+    controls.enableZoom = false
+    controls.enableRotate = false
+    controls.enablePan = false
     globe.pointOfView({ lat: 25, lng: 0, altitude: ALTITUDE })
-    globe.controls().autoRotate = true
-    globe.controls().autoRotateSpeed = AUTO_ROTATE_SPEED
+    controls.autoRotate = true
+    controls.autoRotateSpeed = AUTO_ROTATE_SPEED
 
     const start = performance.now()
 
@@ -47,14 +49,14 @@ export default function Landing() {
       // 60% 이후부터 코사인 곡선으로 감속
       if (t >= 0.6) {
         const phase = (t - 0.6) / 0.4
-        globe.controls().autoRotateSpeed = AUTO_ROTATE_SPEED * Math.cos(phase * Math.PI / 2)
+        controls.autoRotateSpeed = AUTO_ROTATE_SPEED * Math.cos(phase * Math.PI / 2)
       }
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick)
       } else {
-        globe.controls().autoRotate = false
-        globe.controls().autoRotateSpeed = 0
+        controls.autoRotate = false
+        controls.autoRotateSpeed = 0
         setContentVisible(true)
       }
     }

@@ -1,4 +1,11 @@
 import type { DonationRecord, OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } from './types'
+import {
+  mockArticles,
+  mockDonationHistory,
+  mockEvents,
+  mockOfficialUpdates,
+  mockOrganizations,
+} from './data/mockData'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
 const NO_STORE: RequestInit = { cache: 'no-store' }
@@ -10,10 +17,14 @@ export async function getEvents(): Promise<RiskEvent[]> {
     throw new Error(`Failed to fetch events: ${response.status}`)
   }
 
-  return response.json() as Promise<RiskEvent[]>
+  const events = await response.json() as RiskEvent[]
+  return [...events, ...mockEvents]
 }
 
 export async function getEvent(eventId: string): Promise<RiskEvent> {
+  const mockEvent = mockEvents.find(event => event.event_id === eventId)
+  if (mockEvent) return mockEvent
+
   const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}`, NO_STORE)
 
   if (response.status === 404) {
@@ -28,6 +39,10 @@ export async function getEvent(eventId: string): Promise<RiskEvent> {
 }
 
 export async function getEventArticles(eventId: string): Promise<RelatedArticle[]> {
+  if (mockEvents.some(event => event.event_id === eventId)) {
+    return mockArticles.filter(article => article.event_id === eventId)
+  }
+
   const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/articles`, NO_STORE)
 
   if (!response.ok) {
@@ -38,6 +53,10 @@ export async function getEventArticles(eventId: string): Promise<RelatedArticle[
 }
 
 export async function getEventUpdates(eventId: string): Promise<OfficialUpdate[]> {
+  if (mockEvents.some(event => event.event_id === eventId)) {
+    return mockOfficialUpdates.filter(update => update.event_id === eventId)
+  }
+
   const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/updates`, NO_STORE)
 
   if (!response.ok) {
@@ -48,6 +67,10 @@ export async function getEventUpdates(eventId: string): Promise<OfficialUpdate[]
 }
 
 export async function getEventOrganizations(eventId: string): Promise<OrganizationAction[]> {
+  if (mockEvents.some(event => event.event_id === eventId)) {
+    return mockOrganizations.filter(organization => organization.event_id === eventId)
+  }
+
   const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/orgs`, NO_STORE)
 
   if (!response.ok) {
@@ -58,6 +81,9 @@ export async function getEventOrganizations(eventId: string): Promise<Organizati
 }
 
 export async function getOrg(orgId: string): Promise<OrganizationAction> {
+  const mockOrganization = mockOrganizations.find(organization => organization.org_id === orgId)
+  if (mockOrganization) return mockOrganization
+
   const response = await fetch(`${API_BASE_URL}/orgs/${encodeURIComponent(orgId)}`, NO_STORE)
 
   if (response.status === 404) {
@@ -72,6 +98,10 @@ export async function getOrg(orgId: string): Promise<OrganizationAction> {
 }
 
 export async function getOrgHistory(orgId: string): Promise<DonationRecord[]> {
+  if (mockOrganizations.some(organization => organization.org_id === orgId)) {
+    return mockDonationHistory.filter(record => record.org_id === orgId)
+  }
+
   const response = await fetch(`${API_BASE_URL}/orgs/${encodeURIComponent(orgId)}/history`, NO_STORE)
 
   if (!response.ok) {

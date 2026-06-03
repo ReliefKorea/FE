@@ -432,8 +432,8 @@ export default function EventDetail() {
             <div style={{ ...s.verifiedNote, marginTop: 12, flexShrink: 0 }}>
               <span style={{ fontSize: 16 }}>🛡️</span>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 12, color: '#4ade80', marginBottom: 4 }}>Verified Actions</div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>All donation links are verified by the Ministry of Interior and Safety.</div>
+                <div style={{ fontWeight: 600, fontSize: 12, color: '#4ade80', marginBottom: 4 }}>Official Donation Sites</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>재난별 실제 지원 여부와 모금 용도는 각 공식 사이트에서 확인해 주세요.</div>
               </div>
             </div>
           </div>

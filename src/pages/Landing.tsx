@@ -105,7 +105,20 @@ export default function Landing() {
       {/* 스크롤 가능하게 만드는 스페이서 */}
       <div style={{ height: '200vh' }} />
 
-      {/* 상태바 */}
+      {/* 좌측 상단 활성 재난 수 */}
+      {activeEventCount !== null && (
+        <div style={s.statusBarLeft}>
+          <div style={s.statusBadge}>
+            <span style={s.statusIcon}>⚠️</span>
+            <div>
+              <div style={s.statusLabel}>ACTIVE ALERTS</div>
+              <div style={s.statusValue}>{activeEventCount}건 진행 중</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 우측 상단 상태바 */}
       <div style={s.statusBar}>
         <div style={s.statusBadge}>
           <span style={s.statusIcon}>🕐</span>
@@ -176,12 +189,6 @@ export default function Landing() {
       }}>
         <div style={s.introContent}>
           <div style={s.introLabel}>About</div>
-          {activeEventCount !== null && (
-            <div style={s.liveCount}>
-              <span style={{ color: '#ef4444', marginRight: 6 }}>●</span>
-              현재 <span style={{ color: '#e2e8f0', fontWeight: 700 }}>{activeEventCount}건</span>의 재난이 진행 중입니다
-            </div>
-          )}
           <p style={s.introText}>
             Relief Korea는 충북대학교 소프트웨어학부<br />
             <span style={{ color: '#e2e8f0', fontWeight: 600 }}>윤수진, 정준서, 남연서</span>가 만든<br />
@@ -209,6 +216,14 @@ const s: Record<string, React.CSSProperties> = {
     position: 'relative',
     fontFamily: "'Segoe UI', system-ui, sans-serif",
     color: '#e2e8f0',
+  },
+  statusBarLeft: {
+    position: 'fixed',
+    top: 20,
+    left: 28,
+    display: 'flex',
+    gap: 10,
+    zIndex: 20,
   },
   statusBar: {
     position: 'fixed',

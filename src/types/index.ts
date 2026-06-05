@@ -64,6 +64,12 @@ export interface DonationRecord {
   evidence_source?: string
 }
 
+export interface OrgEvidenceSource {
+  title: string
+  url: string
+  source_type: 'official_site' | 'official_report' | 'news' | 'other'
+}
+
 export interface OrganizationAction {
   org_id: string
   event_id: string
@@ -71,7 +77,7 @@ export interface OrganizationAction {
   activity_region: string
   activity_type: string
   activity_summary: string
-  ai_message?: string  // AI가 생성한 감성 멘트
+  ai_message?: string
   donation_link?: string
   volunteer_link?: string
   evidence_note: string

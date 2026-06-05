@@ -322,7 +322,7 @@ export default function MapMain() {
       <header style={s.header}>
         <div style={s.headerLeft}>
           <div style={s.logo} onClick={() => navigate('/')}>
-            <span style={s.logoIcon}>⊕</span>
+            <img src="/logo.png" alt="Relief Korea" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'contain' }} />
             <span style={s.logoText}>Relief Korea</span>
           </div>
           <nav style={s.navTabs}>
@@ -521,9 +521,9 @@ export default function MapMain() {
             }}
           />
           {selectedEvent ? (
-            <EventPanel event={selectedEvent} onClose={() => setSelectedEvent(null)} navigate={navigate} />
+            <EventPanel event={selectedEvent} onClose={() => setSelectedEvent(null)} navigate={navigate} panelWidth={panelWidth} />
           ) : (
-            <AlertListPanel events={filteredEvents} onSelect={setSelectedEvent} />
+            <AlertListPanel events={filteredEvents} onSelect={setSelectedEvent} panelWidth={panelWidth} />
           )}
         </div>
       </div>
@@ -531,7 +531,8 @@ export default function MapMain() {
   )
 }
 
-function AlertListPanel({ events, onSelect }: { events: RiskEvent[]; onSelect: (e: RiskEvent) => void }) {
+
+function AlertListPanel({ events, onSelect, panelWidth }: { events: RiskEvent[]; onSelect: (e: RiskEvent) => void; panelWidth: number }) {
   return (
     <aside style={s.rightPanel}>
       <div style={s.panelHeader}>
@@ -542,22 +543,34 @@ function AlertListPanel({ events, onSelect }: { events: RiskEvent[]; onSelect: (
         {events.map(event => {
           const cfg = severityConfig[event.severity]
           const stCfg = statusConfig[event.status]
+          const cardImg = DISASTER_IMAGES[event.disaster_type]
           return (
             <div key={event.event_id} style={s.alertCard} onClick={() => onSelect(event)}>
-              <div style={s.alertCardHeader}>
-                <span style={{ ...s.riskBadge, background: cfg.bgColor, color: cfg.color, border: `1px solid ${cfg.color}44` }}>
-                  {cfg.label.toUpperCase()} RISK
-                </span>
-                {(event.help_status === 'donation_available' || event.help_status === 'both_available') && (
-                  <span style={s.helpBadge}>♡ 후원 가능</span>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={s.alertCardHeader}>
+                    <span style={{ ...s.riskBadge, background: cfg.bgColor, color: cfg.color, border: `1px solid ${cfg.color}44` }}>
+                      {cfg.label.toUpperCase()} RISK
+                    </span>
+                    {(event.help_status === 'donation_available' || event.help_status === 'both_available') && (
+                      <span style={s.helpBadge}>♡ 후원 가능</span>
+                    )}
+                  </div>
+                  <div style={s.alertTitle}>{event.title}</div>
+                  <div style={s.alertMeta}>
+                    <span>📍 {event.region_name}</span>
+                    <span style={{ color: stCfg.color }}>● {stCfg.label}</span>
+                  </div>
+                  <div style={s.alertSummary}>{event.official_summary}</div>
+                </div>
+                {panelWidth >= 420 && (
+                  <div style={s.cardImgBox}>
+                    {cardImg
+                      ? <img src={cardImg} alt={event.disaster_type} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ color: '#334155', fontSize: 10 }}>준비 중</span>}
+                  </div>
                 )}
               </div>
-              <div style={s.alertTitle}>{event.title}</div>
-              <div style={s.alertMeta}>
-                <span>📍 {event.region_name}</span>
-                <span style={{ color: stCfg.color }}>● {stCfg.label}</span>
-              </div>
-              <div style={s.alertSummary}>{event.official_summary}</div>
             </div>
           )
         })}
@@ -566,11 +579,12 @@ function AlertListPanel({ events, onSelect }: { events: RiskEvent[]; onSelect: (
   )
 }
 
-function EventPanel({ event, onClose, navigate }: { event: RiskEvent; onClose: () => void; navigate: NavigateFunction }) {
+function EventPanel({ event, onClose, navigate, panelWidth }: { event: RiskEvent; onClose: () => void; navigate: NavigateFunction; panelWidth: number }) {
   const cfg = severityConfig[event.severity]
   const startDate = new Date(event.started_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
   const hasDonation = event.help_status === 'donation_available' || event.help_status === 'both_available'
   const hasVolunteer = event.help_status === 'volunteer_available' || event.help_status === 'both_available'
+  const disasterImg = DISASTER_IMAGES[event.disaster_type]
 
   return (
     <aside style={s.rightPanel}>
@@ -589,8 +603,19 @@ function EventPanel({ event, onClose, navigate }: { event: RiskEvent; onClose: (
       {/* 사건 카드 */}
       <div style={{ padding: '16px', overflowY: 'auto' as const, flex: 1 }}>
         <div style={s.epCard}>
-          {/* 사건 제목 */}
-          <div style={s.epTitle}>{event.title}</div>
+          {/* 제목 + 이미지 */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ ...s.epTitle, marginBottom: 0 }}>{event.title}</div>
+            </div>
+            {panelWidth >= 420 && (
+              <div style={s.cardImgBox}>
+                {disasterImg
+                  ? <img src={disasterImg} alt={event.disaster_type} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <span style={{ color: '#334155', fontSize: 10 }}>준비 중</span>}
+              </div>
+            )}
+          </div>
 
           {/* 배지 */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
@@ -718,4 +743,5 @@ const s: Record<string, React.CSSProperties> = {
   epRowText: { color: '#94a3b8', lineHeight: 1.6 },
   epHelpBadge: { fontSize: 12, padding: '4px 10px', borderRadius: 20, background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)', fontWeight: 600 },
   epDetailBtn: { marginTop: 14, background: 'none', border: 'none', color: '#4ade80', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 },
+  cardImgBox: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' },
 }

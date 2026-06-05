@@ -29,9 +29,12 @@ npm run dev
 
 ```text
 VITE_API_BASE_URL=http://localhost:3000/api
+VITE_ENABLE_MOCK_FALLBACK=true
 ```
 
 Use `.env.example` for safe placeholders only. Do not commit `.env` or `.env.local`.
+
+When `VITE_ENABLE_MOCK_FALLBACK` is not `false`, the frontend falls back to local mock events, reports, organizations, and donation history if the backend API is unavailable. These mock records live only in `src/data/mockData.ts`; they are never written to the backend database.
 
 ## Scripts
 

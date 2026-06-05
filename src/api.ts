@@ -14,13 +14,15 @@ const ENABLE_MOCK_FALLBACK = import.meta.env.VITE_ENABLE_MOCK_FALLBACK !== 'fals
 function warnFallback(resource: string, error: unknown) {
   if (!ENABLE_MOCK_FALLBACK) return
 
-  const message = error instanceof Error ? error.message : String(error)
-  console.warn(`[Relief Korea] ${resource} API unavailable. Using mock data.`, message)
+  const events = await response.json() as RiskEvent[]
+  return [...events, ...mockEvents]
 }
 
-async function fetchJson<T>(path: string, resource: string, fallback: () => T): Promise<T> {
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`, NO_STORE)
+export async function getEvent(eventId: string): Promise<RiskEvent> {
+  const mockEvent = mockEvents.find(event => event.event_id === eventId)
+  if (mockEvent) return mockEvent
+
+  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}`, NO_STORE)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch ${resource}: ${response.status}`)
@@ -37,8 +39,12 @@ async function fetchJson<T>(path: string, resource: string, fallback: () => T): 
   }
 }
 
-function mockEventById(eventId: string): RiskEvent {
-  const event = mockEvents.find(item => item.event_id === eventId)
+export async function getEventArticles(eventId: string): Promise<RelatedArticle[]> {
+  if (mockEvents.some(event => event.event_id === eventId)) {
+    return mockArticles.filter(article => article.event_id === eventId)
+  }
+
+  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/articles`, NO_STORE)
 
   if (!event) {
     throw new Error('Event not found')
@@ -47,8 +53,12 @@ function mockEventById(eventId: string): RiskEvent {
   return event
 }
 
-function mockOrgById(orgId: string): OrganizationAction {
-  const organization = mockOrganizations.find(item => item.org_id === orgId)
+export async function getEventUpdates(eventId: string): Promise<OfficialUpdate[]> {
+  if (mockEvents.some(event => event.event_id === eventId)) {
+    return mockOfficialUpdates.filter(update => update.event_id === eventId)
+  }
+
+  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/updates`, NO_STORE)
 
   if (!organization) {
     throw new Error('Organization not found')
@@ -57,9 +67,16 @@ function mockOrgById(orgId: string): OrganizationAction {
   return organization
 }
 
-export async function getEvents(): Promise<RiskEvent[]> {
-  return fetchJson('/events', 'events', () => mockEvents)
-}
+export async function getEventOrganizations(eventId: string): Promise<OrganizationAction[]> {
+  if (mockEvents.some(event => event.event_id === eventId)) {
+    return mockOrganizations.filter(organization => organization.event_id === eventId)
+  }
+
+  const response = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(eventId)}/orgs`, NO_STORE)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch event organizations: ${response.status}`)
+  }
 
 export async function getEvent(eventId: string): Promise<RiskEvent> {
   return fetchJson(
@@ -69,13 +86,11 @@ export async function getEvent(eventId: string): Promise<RiskEvent> {
   )
 }
 
-export async function getEventArticles(eventId: string): Promise<RelatedArticle[]> {
-  return fetchJson(
-    `/events/${encodeURIComponent(eventId)}/articles`,
-    'event articles',
-    () => mockArticles.filter(item => item.event_id === eventId),
-  )
-}
+export async function getOrg(orgId: string): Promise<OrganizationAction> {
+  const mockOrganization = mockOrganizations.find(organization => organization.org_id === orgId)
+  if (mockOrganization) return mockOrganization
+
+  const response = await fetch(`${API_BASE_URL}/orgs/${encodeURIComponent(orgId)}`, NO_STORE)
 
 export async function getEventUpdates(eventId: string): Promise<OfficialUpdate[]> {
   return fetchJson(
@@ -102,9 +117,37 @@ export async function getOrg(orgId: string): Promise<OrganizationAction> {
 }
 
 export async function getOrgHistory(orgId: string): Promise<DonationRecord[]> {
-  return fetchJson(
-    `/orgs/${encodeURIComponent(orgId)}/history`,
-    'organization history',
-    () => mockDonationHistory.filter(item => item.org_id === orgId),
-  )
+  if (mockOrganizations.some(organization => organization.org_id === orgId)) {
+    return mockDonationHistory.filter(record => record.org_id === orgId)
+  }
+
+  const response = await fetch(`${API_BASE_URL}/orgs/${encodeURIComponent(orgId)}/history`, NO_STORE)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch organization history: ${response.status}`)
+  }
+
+  return response.json() as Promise<DonationRecord[]>
+}
+
+export interface IngestionRun {
+  run_id: string
+  started_at: string
+  finished_at: string
+  status: 'success' | 'partial_failure' | 'failed'
+  sources: string[]
+  inserted_count: number
+  updated_count: number
+  skipped_count: number
+  error_message: string | null
+}
+
+export async function getIngestionStatus(): Promise<{ last_run: IngestionRun | null }> {
+  const response = await fetch(`${API_BASE_URL}/ingestion/status`, NO_STORE)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ingestion status: ${response.status}`)
+  }
+
+  return response.json()
 }

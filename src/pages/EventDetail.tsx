@@ -509,7 +509,7 @@ export default function EventDetail() {
                       </a>
                     )}
                     {org.volunteer_link && (
-                      <a href={org.volunteer_link} target="_blank" rel="noopener noreferrer" style={{ ...s.donateBtn, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', marginTop: 6 }}>
+                      <a href={org.volunteer_link} target="_blank" rel="noopener noreferrer" style={{ ...s.donateBtn, background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', color: '#4ade80', marginTop: 6 }}>
                         봉사 신청 ↗
                       </a>
                     )}
@@ -550,8 +550,8 @@ const s: Record<string, React.CSSProperties> = {
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 56, background: '#0d1117', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 },
   headerLeft: { display: 'flex', alignItems: 'center', gap: 24 },
   logo: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' },
-  logoIcon: { width: 28, height: 28, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#818cf8' },
-  logoText: { color: '#818cf8', fontWeight: 700, fontSize: 15 },
+  logoIcon: { width: 28, height: 28, background: 'rgba(22,163,74,0.2)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#4ade80' },
+  logoText: { color: '#4ade80', fontWeight: 700, fontSize: 15 },
   navTabs: { display: 'flex', gap: 4 },
   navTab: { background: 'none', border: 'none', color: '#64748b', fontSize: 13, padding: '6px 14px', borderRadius: 6, cursor: 'pointer' },
   headerRight: { display: 'flex', alignItems: 'center', gap: 12 },
@@ -570,7 +570,7 @@ const s: Record<string, React.CSSProperties> = {
   titleSummary: { fontSize: 14, color: '#cbd5e1', lineHeight: 1.7, marginBottom: 16, maxWidth: 760 },
   titleActions: { display: 'flex', gap: 8 },
   actionBtn: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '7px 16px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' },
-  actionBtnPrimary: { background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, padding: '7px 16px', color: '#818cf8', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
+  actionBtnPrimary: { background: 'rgba(22,163,74,0.2)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: 6, padding: '7px 16px', color: '#4ade80', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
   body: { display: 'flex', flex: 1, overflow: 'hidden' },
   col: { flex: 1, overflowY: 'auto', padding: '20px 24px', borderRight: '1px solid rgba(255,255,255,0.07)' },
   section: {},
@@ -578,13 +578,13 @@ const s: Record<string, React.CSSProperties> = {
   sectionIcon: { fontSize: 16 },
   sectionTitle: { fontSize: 15, fontWeight: 700, color: '#e2e8f0' },
   livePulse: { display: 'flex', alignItems: 'center', gap: 4 },
-  officialCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px 16px', borderLeft: '3px solid #4f46e5' },
+  officialCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px 16px', borderLeft: '3px solid #16a34a' },
   officialCardTop: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
-  officialSource: { fontSize: 11, color: '#818cf8', fontWeight: 600, letterSpacing: 0.5 },
+  officialSource: { fontSize: 11, color: '#4ade80', fontWeight: 600, letterSpacing: 0.5 },
   officialTime: { fontSize: 11, color: '#475569' },
   officialTitle: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 6 },
   officialSummary: { fontSize: 13, color: '#94a3b8', lineHeight: 1.6, margin: 0 },
-  officialLink: { display: 'inline-block', marginTop: 8, fontSize: 12, color: '#818cf8', textDecoration: 'none' },
+  officialLink: { display: 'inline-block', marginTop: 8, fontSize: 12, color: '#4ade80', textDecoration: 'none' },
   articleCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12, textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'stretch', transition: 'border-color 0.15s' },
   articleThumb: { width: 96, minWidth: 96, aspectRatio: '4 / 3', objectFit: 'cover' as const, borderRadius: 7, background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)' },
   articleBody: { minWidth: 0, flex: 1 },
@@ -593,7 +593,7 @@ const s: Record<string, React.CSSProperties> = {
   articleTime: { fontSize: 11, color: '#475569' },
   articleTitle: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 6, lineHeight: 1.4 },
   articleSummary: { fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: 0 },
-  articleReadMore: { fontSize: 11, color: '#818cf8', marginTop: 8 },
+  articleReadMore: { fontSize: 11, color: '#4ade80', marginTop: 8 },
   colRight: { flex: 1, background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, overflow: 'hidden' },
   cardLabel: { fontSize: 11, color: '#64748b', letterSpacing: 1, fontWeight: 600, marginBottom: 10, textTransform: 'uppercase' as const },
   supportSection: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 },
@@ -601,7 +601,7 @@ const s: Record<string, React.CSSProperties> = {
   orgImageWrap: { position: 'relative', overflow: 'hidden' },
   orgImage: { width: '100%', height: 140, objectFit: 'cover' as const, display: 'block' },
   orgImageOverlay: { position: 'absolute', inset: 0, background: 'rgba(8,11,20,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  orgHistoryBtn: { background: 'rgba(99,102,241,0.25)', border: '1px solid rgba(99,102,241,0.5)', borderRadius: 8, padding: '9px 18px', color: '#c7d2fe', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  orgHistoryBtn: { background: 'rgba(22,163,74,0.25)', border: '1px solid rgba(22,163,74,0.5)', borderRadius: 8, padding: '9px 18px', color: '#bbf7d0', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   orgCardBody: { padding: 14 },
   moneySignalPanel: { border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 10px', marginBottom: 10 },
   moneySignalTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 },

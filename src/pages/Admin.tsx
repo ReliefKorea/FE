@@ -62,6 +62,11 @@ export default function Admin() {
     updated: 86,
   }
 
+  function handleLogout() {
+    localStorage.removeItem('admin_token')
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div style={s.root}>
       {/* 헤더 */}
@@ -78,6 +83,7 @@ export default function Admin() {
         </div>
         <div style={s.headerRight}>
           <button style={s.viewMapBtn} onClick={() => navigate('/map')}>↗ 공개용 지도 보기</button>
+          <button style={s.logoutBtn} onClick={handleLogout}>로그아웃</button>
           <button style={s.createBtn} onClick={() => setTab('create')}>+ 새 경보 생성</button>
         </div>
       </header>
@@ -181,27 +187,6 @@ export default function Admin() {
 
         {/* 우측 패널 */}
         <div style={s.sideCol}>
-          {/* 최근 활동 로그 */}
-          <div style={s.sideCard}>
-            <div style={s.sideCardHeader}>
-              <span style={s.sideCardTitle}>🕐 최근 활동 로그</span>
-              <span style={s.sideCardLink}>전체보기</span>
-            </div>
-            {[
-              { user: '김철수', action: '사건 생성: 중부 지방 집중 호우', time: '오전 10:45', avatar: '김' },
-              { user: 'Jane Doe', action: '상태 변경: 그리스 열파 (Closed)', time: '오전 09:20', avatar: 'J' },
-              { user: '이영희', action: '뉴스 추가: 칠레 중부 산불', time: '어제 22:15', avatar: '이' },
-            ].map((log, i) => (
-              <div key={i} style={s.logRow}>
-                <div style={s.logAvatar}>{log.avatar}</div>
-                <div>
-                  <div style={s.logUser}>{log.user} <span style={{ color: '#475569', fontWeight: 400 }}>{log.time}</span></div>
-                  <div style={s.logAction}>{log.action}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* 보안 수칙 */}
           <div style={s.sideCard}>
             <div style={s.sideCardHeader}>
@@ -326,14 +311,15 @@ const s: Record<string, React.CSSProperties> = {
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 56, background: '#0d1117', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 },
   headerLeft: { display: 'flex', alignItems: 'center', gap: 24 },
   logo: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' },
-  logoIcon: { width: 28, height: 28, background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#818cf8' },
-  logoText: { color: '#818cf8', fontWeight: 700, fontSize: 15 },
+  logoIcon: { width: 28, height: 28, background: 'rgba(22,163,74,0.2)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#4ade80' },
+  logoText: { color: '#4ade80', fontWeight: 700, fontSize: 15 },
   navTabs: { display: 'flex', gap: 4 },
   navTab: { background: 'none', border: 'none', color: '#64748b', fontSize: 13, padding: '6px 14px', borderRadius: 6, cursor: 'pointer' },
-  navTabActive: { background: 'rgba(99,102,241,0.12)', color: '#818cf8' },
+  navTabActive: { background: 'rgba(22,163,74,0.12)', color: '#4ade80' },
   headerRight: { display: 'flex', gap: 10 },
   viewMapBtn: { background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' },
-  createBtn: { background: '#4f46e5', border: 'none', borderRadius: 6, padding: '6px 16px', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' },
+  logoutBtn: { background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' },
+  createBtn: { background: '#16a34a', border: 'none', borderRadius: 6, padding: '6px 16px', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' },
   titleArea: { padding: '24px 28px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' },
   pageTitle: { fontSize: 24, fontWeight: 700, color: '#f1f5f9', margin: '0 0 6px' },
   pageSubtitle: { fontSize: 13, color: '#64748b', margin: 0 },
@@ -373,7 +359,7 @@ const s: Record<string, React.CSSProperties> = {
   formHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '18px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' },
   formTitle: { fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 },
   formSubtitle: { fontSize: 12, color: '#64748b' },
-  draftBadge: { fontSize: 11, color: '#818cf8', background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.3)', borderRadius: 4, padding: '3px 8px' },
+  draftBadge: { fontSize: 11, color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 4, padding: '3px 8px' },
   closeFormBtn: { background: 'none', border: 'none', color: '#64748b', fontSize: 16, cursor: 'pointer', padding: 4 },
   formSection: { padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' },
   formSectionTitle: { fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 14 },
@@ -389,7 +375,7 @@ const s: Record<string, React.CSSProperties> = {
   formFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' },
   checkLabel: { display: 'flex', alignItems: 'center', fontSize: 12, color: '#64748b', cursor: 'pointer' },
   saveDraftBtn: { background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '9px 18px', color: '#94a3b8', fontSize: 13, cursor: 'pointer' },
-  publishBtn: { background: '#4f46e5', border: 'none', borderRadius: 6, padding: '9px 20px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  publishBtn: { background: '#16a34a', border: 'none', borderRadius: 6, padding: '9px 20px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   footer: { padding: '12px 28px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', background: '#0d1117', flexShrink: 0, marginTop: 'auto' },
   footerLink: { fontSize: 11, color: '#334155', cursor: 'pointer' },
 }

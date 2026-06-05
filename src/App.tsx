@@ -4,6 +4,8 @@ import MapMain from './pages/MapMain'
 import EventDetail from './pages/EventDetail'
 import OrgHistory from './pages/OrgHistory'
 import Admin from './pages/Admin'
+import Login from './pages/Login'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
@@ -13,7 +15,12 @@ function App() {
         <Route path="/map" element={<MapMain />} />
         <Route path="/event/:eventId" element={<EventDetail />} />
         <Route path="/org/:orgId/history" element={<OrgHistory />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <Admin />
+          </ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   )

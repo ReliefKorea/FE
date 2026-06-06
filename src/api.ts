@@ -11,14 +11,14 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000
 const NO_STORE: RequestInit = { cache: 'no-store' }
 
 export async function getEvents(): Promise<RiskEvent[]> {
-  const response = await fetch(`${API_BASE_URL}/events`, NO_STORE)
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch events: ${response.status}`)
+  try {
+    const response = await fetch(`${API_BASE_URL}/events`, NO_STORE)
+    if (!response.ok) throw new Error(`Failed to fetch events: ${response.status}`)
+    const events = await response.json() as RiskEvent[]
+    return [...events, ...mockEvents]
+  } catch {
+    return mockEvents
   }
-
-  const events = await response.json() as RiskEvent[]
-  return [...events, ...mockEvents]
 }
 
 export async function getEvent(eventId: string): Promise<RiskEvent> {

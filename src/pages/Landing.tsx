@@ -13,7 +13,6 @@ export default function Landing() {
   const globeRef = useRef<GlobeMethods | undefined>(undefined)
   const animStarted = useRef(false)
   const rafRef = useRef<number>(0)
-  const rootRef = useRef<HTMLDivElement>(null)
   const [contentVisible, setContentVisible] = useState(false)
   const [time, setTime] = useState(new Date())
   const [scrollY, setScrollY] = useState(0)
@@ -29,11 +28,9 @@ export default function Landing() {
   }, [])
 
   useEffect(() => {
-    const el = rootRef.current
-    if (!el) return
-    const onScroll = () => setScrollY(el.scrollTop)
-    el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
+    const onScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
@@ -86,7 +83,7 @@ export default function Landing() {
   const introProgress = Math.min(1, Math.max(0, scrollY / (window.innerHeight * 0.7)))
 
   return (
-    <div ref={rootRef} style={s.root}>
+    <div style={s.root}>
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; }
@@ -101,9 +98,6 @@ export default function Landing() {
           50% { transform: translateY(5px); }
         }
       `}</style>
-
-      {/* 스크롤 가능하게 만드는 스페이서 */}
-      <div style={{ height: '200vh' }} />
 
       {/* 좌측 상단 활성 재난 수 */}
       {activeEventCount !== null && (
@@ -174,7 +168,7 @@ export default function Landing() {
                 </button>
               </div>
               <div style={{ position: 'relative', zIndex: 2, animation: 'fadeUp 3s 0.8s cubic-bezier(0.16,1,0.3,1) both' }}>
-                <div style={s.scrollHint}>소개 보기 &nbsp;↓</div>
+                <div style={s.scrollHint}>스크롤하여 알아보기 &nbsp;↓</div>
               </div>
             </div>
           )}
@@ -189,17 +183,26 @@ export default function Landing() {
       }}>
         <div style={s.introContent}>
           <div style={s.introLabel}>About</div>
+          <p style={{ ...s.introText, fontSize: 14, color: '#e2e8f0', fontWeight: 600, marginBottom: 16 }}>
+            도움의 마음, 행동으로 이어지도록.
+          </p>
           <p style={s.introText}>
-            Relief Korea는 충북대학교 소프트웨어학부<br />
-            <span style={{ color: '#e2e8f0', fontWeight: 600 }}>윤수진, 정준서, 남연서</span>가 만든<br />
-            재난 정보 플랫폼입니다.<br /><br />
-            지금 어디서 무슨 위험이 발생했는지,<br />
-            그 정보가 무엇으로 확인되는지,<br />
-            내가 지금 할 수 있는 도움은 있는지.<br /><br />
-            재난 현황·공식 정보·복구 단체·후원 링크를<br />
-            사건 단위로 묶어 지도 위에 보여줍니다.<br /><br />
-            당신의 조그마한 후원이<br />
-            누군가의 일상을 되찾는 데 큰 힘이 됩니다.
+            재난이 발생했다는 소식을 들었을 때, 우리는 본능적으로 생각합니다.<br />
+            "내가 뭔가 도울 수 있을까?"<br />
+            하지만 막상 검색창을 열면 수많은 정보들이 쏟아집니다.<br />
+            어느 기사가 최신인지, 어떤 후원 단체가 믿을 만한지, 봉사는 어디서 신청해야 하는지—<br />
+            정작 돕고 싶은 마음은 있는데, 무엇을 해야 할지 몰라 멈춰버리게 됩니다.
+          </p>
+          <p style={s.introText}>
+            그래서 이 플랫폼을 만들었습니다.<br />
+            저희는 충북대학교 소프트웨어학부 윤수진, 정준서, 남연서 세 학생으로 이루어진 Dominator 팀입니다.<br />
+            Relief Korea를 통해 지금 한국에서 도움이 필요한 재난을 한눈에 확인하세요.<br />
+            검증된 공식 기사와 신뢰할 수 있는 후원·봉사 정보만을 모아 실제 행동에 더 빨리 닿을 수 있도록 도와드립니다.<br />
+            흩어진 정보를 찾아 헤매는 대신, 오늘 이 자리에서 바로 도움으로 이어지세요.
+          </p>
+          <p style={{ ...s.introText, color: '#e2e8f0', fontWeight: 700, marginBottom: 0 }}>
+            신뢰할 수 있는 정보, 빠른 연결, 그리고 당신의 선한 마음.<br />
+            함께라면 더 많은 곳에 닿을 수 있습니다.
           </p>
         </div>
       </div>
@@ -210,9 +213,8 @@ export default function Landing() {
 const s: Record<string, React.CSSProperties> = {
   root: {
     width: '100%',
-    height: '100vh',
+    minHeight: '200vh',
     background: '#080b14',
-    overflowY: 'scroll',
     position: 'relative',
     fontFamily: "'Segoe UI', system-ui, sans-serif",
     color: '#e2e8f0',
@@ -334,9 +336,9 @@ const s: Record<string, React.CSSProperties> = {
     bottom: 0,
     left: 0,
     right: 0,
-    height: '62vh',
+    height: '80vh',
     borderRadius: '20px 20px 0 0',
-    background: 'rgba(13, 17, 23, 0.88)',
+    background: 'rgba(13, 17, 23, 0.5)',
     backdropFilter: 'blur(20px)',
     border: '1px solid rgba(255,255,255,0.1)',
     borderBottom: 'none',
@@ -345,12 +347,12 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     willChange: 'transform',
-    overflowY: 'auto',
+    overflow: 'hidden',
   },
   introContent: {
     textAlign: 'center',
-    maxWidth: 520,
-    padding: '32px 24px',
+    maxWidth: 780,
+    padding: '32px 40px',
   },
   introLabel: {
     fontSize: 11,
@@ -369,9 +371,9 @@ const s: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   introText: {
-    fontSize: 15,
+    fontSize: 13,
     color: '#64748b',
-    lineHeight: 2,
-    margin: 0,
+    lineHeight: 1.85,
+    margin: '0 0 16px 0',
   },
 }

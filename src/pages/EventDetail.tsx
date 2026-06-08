@@ -34,6 +34,20 @@ function moneySignal(org: OrganizationAction) {
   return moneySignalConfig.needs_review
 }
 
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return date.toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }) + ' KST'
+}
+
 export default function EventDetail() {
   const { eventId } = useParams()
   const navigate = useNavigate()
@@ -471,6 +485,9 @@ export default function EventDetail() {
                       {org.ai_report_id && (
                         <span style={s.aiReportBadge}>AI 근거 리포트</span>
                       )}
+                      {org.ai_report_id && org.report_generated_at && (
+                        <span style={s.ragRunBadge}>RAG 마지막 실행 {formatDateTime(org.report_generated_at)}</span>
+                      )}
                     </div>
                     <p style={s.orgDesc}>{org.report_summary ?? org.ai_message ?? org.activity_summary}</p>
                     {org.finance_summary && (
@@ -613,6 +630,7 @@ const s: Record<string, React.CSSProperties> = {
   orgBadges: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 },
   verifiedBadge: { fontSize: 10, color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: 4, padding: '2px 6px' },
   aiReportBadge: { fontSize: 10, color: '#93c5fd', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)', borderRadius: 4, padding: '2px 6px' },
+  ragRunBadge: { fontSize: 10, color: '#c4b5fd', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: 4, padding: '2px 6px' },
   trustBadge: { flexShrink: 0, fontSize: 10, borderRadius: 4, padding: '3px 6px', fontWeight: 700 },
   orgDesc: { fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: '0 0 10px' },
   reportBlock: { background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '8px 10px', marginBottom: 8 },

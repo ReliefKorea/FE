@@ -52,6 +52,20 @@ function parseWonAmount(amount?: string) {
   return digits ? Number(digits) : 0
 }
 
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return date.toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }) + ' KST'
+}
+
 function getSpendingDecision(org: OrganizationAction, records: DonationRecord[]) {
   const trustScore = org.trust_score ?? 0
   const evidenceCount = (org.evidence_sources?.length ?? 0) + records.filter(record => record.evidence_url).length
@@ -160,6 +174,7 @@ export default function OrgHistory() {
   const evidenceCount = (org.evidence_sources?.length ?? 0) + records.filter(record => record.evidence_url).length
   const moneyUseRecords = records.filter(record => record.amount || record.beneficiaries).length
   const spendingDecision = getSpendingDecision(org, records)
+  const ragRunAt = org.ai_report_id ? org.report_generated_at : undefined
 
   return (
     <div style={s.root}>
@@ -209,6 +224,9 @@ export default function OrgHistory() {
                 {trustConfig[org.trust_level].label}
                 {typeof org.trust_score === 'number' ? ` ${org.trust_score}` : ''}
               </div>
+            )}
+            {ragRunAt && (
+              <div style={s.heroRagBadge}>RAG 마지막 실행 {formatDateTime(ragRunAt)}</div>
             )}
           </div>
         </div>
@@ -272,6 +290,7 @@ export default function OrgHistory() {
             <span style={s.aiIcon}>🤖</span>
             <span style={s.aiTitle}>AI 근거 분석 리포트</span>
             <span style={s.aiBadge}>Beta</span>
+            {ragRunAt && <span style={s.aiRunAt}>{formatDateTime(ragRunAt)} 기준</span>}
           </div>
           <p style={s.aiText}>
             {org.report_summary ?? org.ai_message ?? `${org.org_name}은(는) 재난 현장 지원 단체로 등록되어 있습니다. AI가 활동 근거와 후원 채널을 분석해 요약했습니다.`}
@@ -397,6 +416,7 @@ const s: Record<string, React.CSSProperties> = {
   heroBadgeRow: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' },
   heroBadge: { display: 'inline-block', fontSize: 12, color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 20, padding: '4px 12px', fontWeight: 600 },
   heroTrustBadge: { display: 'inline-block', fontSize: 12, borderRadius: 20, padding: '4px 12px', fontWeight: 700 },
+  heroRagBadge: { display: 'inline-block', fontSize: 12, color: '#c4b5fd', background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 20, padding: '4px 12px', fontWeight: 700 },
   statsBar: { display: 'flex', alignItems: 'center', background: '#0d1117', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 40px', flexShrink: 0 },
   statItem: { padding: '18px 32px', textAlign: 'center' },
   statValue: { fontSize: 20, fontWeight: 800, color: '#e2e8f0', marginBottom: 4 },
@@ -414,10 +434,11 @@ const s: Record<string, React.CSSProperties> = {
   decisionMetricLabel: { display: 'block', fontSize: 11, color: '#64748b', marginBottom: 4 },
   decisionMetricValue: { display: 'block', fontSize: 15, color: '#e2e8f0', overflowWrap: 'anywhere' },
   aiCard: { background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 14, padding: '20px 24px' },
-  aiCardHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 },
+  aiCardHeader: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 },
   aiIcon: { fontSize: 18 },
   aiTitle: { fontSize: 14, fontWeight: 700, color: '#a5b4fc' },
   aiBadge: { fontSize: 10, color: '#4ade80', background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', borderRadius: 4, padding: '2px 7px', fontWeight: 600 },
+  aiRunAt: { fontSize: 11, color: '#94a3b8', marginLeft: 'auto' },
   aiText: { fontSize: 14, color: '#cbd5e1', lineHeight: 1.8, margin: 0 },
   aiSubBlock: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', marginTop: 12 },
   aiSubTitle: { fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 5 },

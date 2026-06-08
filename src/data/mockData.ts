@@ -2,6 +2,76 @@ import type { RiskEvent, OfficialUpdate, RelatedArticle, OrganizationAction, Don
 
 const checkedAt = '2026-06-02T00:00:00'
 
+const goodNeighborsEvidenceSources = [
+  { title: '굿네이버스 인도적지원 사업안내', url: 'https://www.goodneighbors.kr/business/global_relief/emergency.gn', source_type: 'official_site' },
+  { title: '굿네이버스 2025 재정보고', url: 'https://www.goodneighbors.kr/goodneighbors/management/finance.gn', source_type: 'official_report' },
+  { title: '굿네이버스 투명경영', url: 'https://www.goodneighbors.kr/goodneighbors/management/transparency.gn', source_type: 'official_report' },
+]
+
+const goodNeighborsFinanceSummary = '공개 수치: 2025년 재정보고에 국내긴급구호사업 5,183,052,624원, 해외 긴급구호사업 1,848,971,146원이 공개되어 있습니다. 사용처: 재난 피해 아동과 가정의 긴급 생계비, 맞춤형 키트, 심리치료, 자연재난·분쟁 피해 인도적 지원. 투명성 근거: 재정보고와 투명경영 페이지에서 감사, 예·결산, 후원금 수입·지출 공개 원칙을 확인할 수 있습니다.'
+
+function goodNeighborsMockOrg(orgId: string, eventId: string, region: string): OrganizationAction {
+  return {
+    org_id: orgId,
+    event_id: eventId,
+    org_name: '굿네이버스',
+    activity_region: region,
+    activity_type: '국내외 재난 긴급구호 및 위기가정 지원',
+    activity_summary: '공식 인도적지원 사업과 재정보고를 기준으로 재난 피해 아동·가정의 생계, 회복, 심리 지원에 연결 가능한 단체입니다.',
+    donation_link: 'https://www.goodneighbors.kr/',
+    evidence_note: '공식 인도적지원, 재정보고, 투명경영 자료 확인',
+    verified_by_admin: false,
+    last_checked_at: checkedAt,
+    trust_level: 'moderate',
+    trust_score: 74,
+    report_summary: '사용처 판단: 긴급구호 사업비와 재정보고가 공개되어 후원금 사용 목적과 근거 링크를 확인할 수 있습니다.',
+    finance_summary: goodNeighborsFinanceSummary,
+    risk_notes: '강점: 국내외 긴급구호 사업비와 재정보고, 투명경영 기준이 공개되어 있습니다. 빈칸: 특정 재난별 실시간 집행액은 캠페인 또는 결과보고별 확인이 필요합니다.',
+    evidence_sources: goodNeighborsEvidenceSources,
+    report_generated_at: checkedAt,
+  }
+}
+
+function goodNeighborsMockRecords(orgId: string): DonationRecord[] {
+  return [
+    {
+      record_id: `rec-${orgId}-gn-domestic-emergency`,
+      org_id: orgId,
+      date: '2026-01-01',
+      title: '2025 국내긴급구호사업 결산 지표',
+      amount: '₩5,183,052,624',
+      region: '국내 재난 피해 아동·가정',
+      description: '2025 재정보고 기준 국내긴급구호사업은 재난 피해 아동과 가정의 안전한 회복을 위한 긴급 생계비, 맞춤형 키트, 심리치료 등으로 집행된 공개 지표입니다.',
+      evidence_title: '굿네이버스 2025 재정보고',
+      evidence_url: 'https://www.goodneighbors.kr/goodneighbors/management/finance.gn',
+      evidence_source: '굿네이버스',
+    },
+    {
+      record_id: `rec-${orgId}-gn-global-emergency`,
+      org_id: orgId,
+      date: '2026-01-01',
+      title: '2025 해외 긴급구호사업 결산 지표',
+      amount: '₩1,848,971,146',
+      region: '해외 자연재난·분쟁 피해 지역',
+      description: '2025 재정보고 기준 해외 긴급구호사업은 자연 재난, 전쟁 피해, 식량 기근 등 인도적 지원사업으로 집행된 공개 지표입니다.',
+      evidence_title: '굿네이버스 2025 재정보고',
+      evidence_url: 'https://www.goodneighbors.kr/goodneighbors/management/finance.gn',
+      evidence_source: '굿네이버스',
+    },
+    {
+      record_id: `rec-${orgId}-gn-humanitarian-relief`,
+      org_id: orgId,
+      date: '2026-01-01',
+      title: '인도적지원 사업 근거',
+      region: '재난 및 분쟁 지역',
+      description: '공식 사업 안내에서 긴급구호와 재건 복구 활동, 자연재해 대응, 주택·기반시설 재건, 생계 지원을 사업 영역으로 공개합니다.',
+      evidence_title: '굿네이버스 인도적지원 사업안내',
+      evidence_url: 'https://www.goodneighbors.kr/business/global_relief/emergency.gn',
+      evidence_source: '굿네이버스',
+    },
+  ]
+}
+
 export const mockEvents: RiskEvent[] = [
   {
     event_id: 'evt-001',
@@ -240,14 +310,14 @@ export const mockOrganizations: OrganizationAction[] = [
   },
   { org_id: 'org-006', event_id: 'evt-002', org_name: '한국해비타트', activity_region: '경상북도 울진', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.habitat.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-007', event_id: 'evt-003', org_name: '희망브리지 전국재해구호협회', activity_region: '충청북도 제천', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.hopebridge.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
-  { org_id: 'org-008', event_id: 'evt-003', org_name: '굿네이버스', activity_region: '충청북도 제천', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.goodneighbors.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
+  goodNeighborsMockOrg('org-008', 'evt-003', '충청북도 제천'),
   { org_id: 'org-009', event_id: 'evt-003', org_name: '밀알복지재단', activity_region: '충청북도 제천', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.miral.org/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-010', event_id: 'evt-004', org_name: '희망브리지 전국재해구호협회', activity_region: '제주도', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.hopebridge.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-011', event_id: 'evt-004', org_name: '월드비전', activity_region: '제주도', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://my.worldvision.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-012', event_id: 'evt-004', org_name: '유니세프한국위원회', activity_region: '제주도', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.unicef.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-013', event_id: 'evt-005', org_name: '희망브리지 전국재해구호협회', activity_region: '경상남도 통영', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.hopebridge.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-014', event_id: 'evt-005', org_name: '사회복지공동모금회 사랑의열매', activity_region: '경상남도 통영', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.chest.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
-  { org_id: 'org-015', event_id: 'evt-005', org_name: '굿네이버스', activity_region: '경상남도 통영', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.goodneighbors.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
+  goodNeighborsMockOrg('org-015', 'evt-005', '경상남도 통영'),
   { org_id: 'org-016', event_id: 'evt-006', org_name: '희망브리지 전국재해구호협회', activity_region: '인천', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.hopebridge.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-017', event_id: 'evt-006', org_name: '사회복지공동모금회 사랑의열매', activity_region: '인천 해안 지역', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.chest.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-018', event_id: 'evt-006', org_name: '한국해비타트', activity_region: '인천', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.habitat.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
@@ -255,7 +325,7 @@ export const mockOrganizations: OrganizationAction[] = [
   { org_id: 'org-020', event_id: 'evt-007', org_name: '한국해비타트', activity_region: '강원도 동해', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.habitat.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-021', event_id: 'evt-007', org_name: '사회복지공동모금회 사랑의열매', activity_region: '강원도 동해', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.chest.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-022', event_id: 'evt-008', org_name: '희망브리지 전국재해구호협회', activity_region: '전라북도 장수', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.hopebridge.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
-  { org_id: 'org-023', event_id: 'evt-008', org_name: '굿네이버스', activity_region: '전라북도 장수', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.goodneighbors.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
+  goodNeighborsMockOrg('org-023', 'evt-008', '전라북도 장수'),
   { org_id: 'org-024', event_id: 'evt-008', org_name: '밀알복지재단', activity_region: '전라북도 장수', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.miral.org/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-025', event_id: 'evt-009', org_name: '희망브리지 전국재해구호협회', activity_region: '제주도 서귀포', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://donate.hopebridge.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
   { org_id: 'org-026', event_id: 'evt-009', org_name: '사회복지공동모금회 사랑의열매', activity_region: '제주도 서귀포', activity_type: '시연용 후원 연결', activity_summary: '공식 후원 페이지로 연결됩니다. 해당 재난의 실제 지원 여부와 모금 용도는 공식 사이트에서 확인해 주세요.', donation_link: 'https://www.chest.or.kr/', evidence_note: '화면 시연용 더미 연결 데이터 - 재난별 실제 취급 여부 미검증', verified_by_admin: false, last_checked_at: checkedAt },
@@ -266,11 +336,14 @@ export const mockDonationHistory: DonationRecord[] = [
   { record_id: 'rec-001', org_id: 'org-001', date: '2026-05-12', disaster_type: 'wildfire', title: '강원 산불 이재민 긴급 구호', region: '강원도 고성·속초', amount: '₩48,200,000', beneficiaries: 820, description: '대피소 3곳 운영, 이재민에게 식료품·생활용품·의류 긴급 지원.' },
   { record_id: 'rec-002', org_id: 'org-004', date: '2026-05-11', disaster_type: 'wildfire', title: '울진 산불 피해 가구 지원', region: '경상북도 울진', amount: '₩31,400,000', beneficiaries: 430, description: '재발화 위험 지역 주민에게 임시 거처와 생필품을 지원.' },
   { record_id: 'rec-003', org_id: 'org-007', date: '2026-05-11', disaster_type: 'wildfire', title: '제천 산불 예방 물품 지원', region: '충청북도 제천', amount: '₩12,800,000', beneficiaries: 210, description: '산림 인접 마을에 마스크, 생수, 비상 조명 물품을 전달.' },
+  ...goodNeighborsMockRecords('org-008'),
   { record_id: 'rec-004', org_id: 'org-010', date: '2026-05-11', disaster_type: 'typhoon', title: '제주 태풍 대비 긴급 물품 지원', region: '제주도', amount: '₩27,500,000', beneficiaries: 560, description: '해안가 취약 가구에 생수와 위생용품, 임시 대피 물품을 지원.' },
   { record_id: 'rec-005', org_id: 'org-013', date: '2026-05-12', disaster_type: 'typhoon', title: '남해안 태풍 대피소 물품 지원', region: '경상남도 통영', amount: '₩35,200,000', beneficiaries: 740, description: '대피소 운영에 필요한 담요, 식수, 응급 키트를 확보.' },
+  ...goodNeighborsMockRecords('org-015'),
   { record_id: 'rec-006', org_id: 'org-016', date: '2026-05-12', disaster_type: 'typhoon', title: '인천 강풍 피해 예방 지원', region: '인천', amount: '₩18,600,000', beneficiaries: 380, description: '강풍 취약 시설 주변 주민에게 안전 물품과 안내 자료를 지원.' },
   { record_id: 'rec-007', org_id: 'org-019', date: '2026-05-12', disaster_type: 'earthquake', title: '동해 지진 긴급 대피 물품 지원', region: '강원도 동해', amount: '₩29,900,000', beneficiaries: 510, description: '여진 가능성에 대비해 대피소 물품과 긴급 생활 물자를 준비.' },
   { record_id: 'rec-008', org_id: 'org-022', date: '2026-05-11', disaster_type: 'earthquake', title: '전북 지진 피해 점검 지원', region: '전라북도 장수', amount: '₩16,700,000', beneficiaries: 260, description: '노후 주택 안전 점검과 임시 거처 안내를 지원.' },
+  ...goodNeighborsMockRecords('org-023'),
   { record_id: 'rec-009', org_id: 'org-025', date: '2026-05-10', disaster_type: 'earthquake', title: '서귀포 해역 지진 모니터링 지원', region: '제주도 서귀포', amount: '₩9,800,000', beneficiaries: 150, description: '해안 지역 취약 가구에 안전 안내와 비상 물품을 전달.' },
 ]
 

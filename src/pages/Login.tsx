@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { API_BASE_URL } from '../config'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
 const INVALID_CREDENTIALS_MESSAGE = '?꾩씠???먮뒗 鍮꾨?踰덊샇媛 ?щ컮瑜댁? ?딆뒿?덈떎.'
 const LOGIN_SERVER_ERROR_MESSAGE = '濡쒓렇???쒕쾭???곌껐?????놁뒿?덈떎.'
 

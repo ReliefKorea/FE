@@ -6,8 +6,8 @@ import {
   mockOfficialUpdates,
   mockOrganizations,
 } from './data/mockData'
+import { API_BASE_URL } from './config'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api'
 const NO_STORE: RequestInit = { cache: 'no-store' }
 const EVENT_ORG_DISPLAY_LIMIT = 3
 

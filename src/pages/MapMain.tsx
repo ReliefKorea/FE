@@ -9,7 +9,6 @@ import { getEvents } from '../api'
 import { disasterTypeLabels, disasterTypeIcons, severityConfig, statusConfig } from '../data/mockData'
 import type { RiskEvent, DisasterType } from '../types'
 
-// leaflet 기본 아이콘 경로 문제 해결
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -261,7 +260,7 @@ export default function MapMain() {
   function toggleSeverity(val: string) {
     setSeverityFilter(prev => {
       const next = new Set(prev)
-      next.has(val) ? next.delete(val) : next.add(val)
+      if (next.has(val)) { next.delete(val) } else { next.add(val) }
       return next
     })
   }
@@ -269,7 +268,7 @@ export default function MapMain() {
   function toggleHelp(val: string) {
     setHelpFilter(prev => {
       const next = new Set(prev)
-      next.has(val) ? next.delete(val) : next.add(val)
+      if (next.has(val)) { next.delete(val) } else { next.add(val) }
       return next
     })
   }
@@ -318,7 +317,6 @@ export default function MapMain() {
         }
       `}</style>
 
-      {/* 상단 헤더 */}
       <header style={s.header}>
         <div style={s.headerLeft}>
           <div style={s.logo} onClick={() => navigate('/')}>
@@ -340,7 +338,6 @@ export default function MapMain() {
       </header>
 
       <div style={s.body}>
-        {/* 좌측 카테고리 사이드바 */}
         <aside style={s.sidebar}>
           <div style={s.sidebarSection}>CATEGORIES</div>
           {CATEGORIES.map(cat => (
@@ -363,9 +360,7 @@ export default function MapMain() {
           </button>
         </aside>
 
-        {/* 지도 영역 */}
         <div style={s.mapWrapper}>
-          {/* 검색바 */}
           <div style={s.searchBar}>
             <input
               style={s.searchInput}
@@ -426,7 +421,6 @@ export default function MapMain() {
             </div>
           )}
 
-          {/* Leaflet 지도 */}
           <MapContainer
             center={[36.5, 127.8]}
             zoom={7}
@@ -490,7 +484,6 @@ export default function MapMain() {
             </MarkerClusterGroup>
           </MapContainer>
 
-          {/* 하단 범례 */}
           <div style={s.bottomBar}>
             {Object.entries(severityConfig).reverse().map(([key, cfg]) => (
               <div key={key} style={s.legendItem}>
@@ -506,9 +499,7 @@ export default function MapMain() {
           </div>
         </div>
 
-        {/* 우측 패널 */}
         <div style={{ position: 'relative', width: panelWidth, flexShrink: 0, display: 'flex' }}>
-          {/* 드래그 핸들 */}
           <div
             style={s.resizeHandle}
             onMouseDown={e => {
@@ -588,7 +579,6 @@ function EventPanel({ event, onClose, navigate, panelWidth }: { event: RiskEvent
 
   return (
     <aside style={s.rightPanel}>
-      {/* 헤더 */}
       <div style={s.epHeader}>
         <div>
           <div style={s.epRegion}>
@@ -600,10 +590,8 @@ function EventPanel({ event, onClose, navigate, panelWidth }: { event: RiskEvent
         <button onClick={onClose} style={s.closeBtn}>✕</button>
       </div>
 
-      {/* 사건 카드 */}
       <div style={{ padding: '16px', overflowY: 'auto' as const, flex: 1 }}>
         <div style={s.epCard}>
-          {/* 제목 + 이미지 */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ ...s.epTitle, marginBottom: 0 }}>{event.title}</div>
@@ -617,7 +605,6 @@ function EventPanel({ event, onClose, navigate, panelWidth }: { event: RiskEvent
             )}
           </div>
 
-          {/* 배지 */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
             <span style={{ ...s.epBadge, background: cfg.bgColor, color: cfg.color, border: `1px solid ${cfg.color}66` }}>
               위험도: {cfg.label}
@@ -627,20 +614,17 @@ function EventPanel({ event, onClose, navigate, panelWidth }: { event: RiskEvent
             </span>
           </div>
 
-          {/* 발생일 */}
           <div style={s.epRow}>
             <span style={s.epRowIcon}>🗓</span>
             <span style={s.epRowLabel}>발생:</span>
             <span style={s.epRowValue}>{startDate}</span>
           </div>
 
-          {/* 상황 */}
           <div style={s.epRow}>
             <span style={s.epRowIcon}>ℹ️</span>
             <span style={s.epRowText}>{event.official_summary}</span>
           </div>
 
-          {/* 후원/봉사 가능 여부 */}
           {(hasDonation || hasVolunteer) && (
             <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
               {hasDonation && (
@@ -654,7 +638,6 @@ function EventPanel({ event, onClose, navigate, panelWidth }: { event: RiskEvent
             </div>
           )}
 
-          {/* 자세히 보기 */}
           <button
             style={s.epDetailBtn}
             onClick={() => navigate(`/event/${event.event_id}`)}

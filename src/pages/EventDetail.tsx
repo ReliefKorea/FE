@@ -52,6 +52,31 @@ export default function EventDetail() {
   const { eventId } = useParams()
   const navigate = useNavigate()
   const [hoveredOrg, setHoveredOrg] = useState<string | null>(null)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [copyDone, setCopyDone] = useState(false)
+
+  function handleCopyLink() {
+    navigator.clipboard.writeText(window.location.href)
+    setCopyDone(true)
+    setTimeout(() => setCopyDone(false), 2000)
+  }
+
+  function handleKakaoShare(title: string) {
+    const kakao = (window as Window & { Kakao?: { isInitialized: () => boolean; init: (key: string) => void; Share: { sendDefault: (opts: object) => void } } }).Kakao
+    if (!kakao) return
+    const appKey = import.meta.env.VITE_KAKAO_APP_KEY
+    if (!appKey) { alert('VITE_KAKAO_APP_KEY가 설정되지 않았습니다'); return }
+    if (!kakao.isInitialized()) kakao.init(appKey)
+    kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title,
+        description: '재난 정보를 확인하세요',
+        imageUrl: `https://picsum.photos/seed/${eventId}/600/315`,
+        link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+      },
+    })
+  }
   const [event, setEvent] = useState<RiskEvent | null>(null)
   const [isLoadingEvent, setIsLoadingEvent] = useState(true)
   const [eventError, setEventError] = useState<string | null>(null)
@@ -305,8 +330,7 @@ export default function EventDetail() {
           </div>
           <div style={s.titleSummary}>{event.official_summary}</div>
           <div style={s.titleActions}>
-            <button style={s.actionBtn}>↗ 공유</button>
-            <button style={s.actionBtnPrimary}>📊 공식 보고서 확인</button>
+            <button style={s.actionBtn} onClick={() => setShowShareModal(true)}>↗ 공유</button>
           </div>
         </div>
       </div>
@@ -550,6 +574,46 @@ export default function EventDetail() {
         </div>
       </div>
 
+      {/* 공유 모달 */}
+      {showShareModal && (
+        <div style={s.modalOverlay} onClick={() => setShowShareModal(false)}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={s.modalHeader}>
+              <span style={s.modalTitle}>공유하기</span>
+              <button style={s.modalClose} onClick={() => setShowShareModal(false)}>✕</button>
+            </div>
+            <div style={s.modalBody}>
+              <button style={s.shareItem} onClick={handleCopyLink}>
+                <span style={s.shareItemIcon}>🔗</span>
+                <span>{copyDone ? '✓ 복사됨!' : '링크 복사'}</span>
+              </button>
+              <button style={s.shareItem} onClick={() => { handleKakaoShare(event.title); setShowShareModal(false) }}>
+                <span style={s.shareItemIcon}>💬</span>
+                <span>카카오톡 공유</span>
+              </button>
+              <a
+                style={{ ...s.shareItem, textDecoration: 'none' }}
+                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(event.title)}`}
+                target="_blank" rel="noopener noreferrer"
+                onClick={() => setShowShareModal(false)}
+              >
+                <span style={s.shareItemIcon}>𝕏</span>
+                <span>Twitter 공유</span>
+              </a>
+              <a
+                style={{ ...s.shareItem, textDecoration: 'none' }}
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
+                target="_blank" rel="noopener noreferrer"
+                onClick={() => setShowShareModal(false)}
+              >
+                <span style={s.shareItemIcon}>f</span>
+                <span>Facebook 공유</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 하단 */}
       <footer style={s.footer}>
         <span style={{ color: '#334155', fontSize: 11 }}>© 2026 Relief Korea. Real-time KMA Integration active.</span>
@@ -640,6 +704,14 @@ const s: Record<string, React.CSSProperties> = {
   evidenceLink: { fontSize: 11, color: '#818cf8', textDecoration: 'none', lineHeight: 1.35, overflowWrap: 'anywhere' },
   donateBtn: { display: 'block', textAlign: 'center', background: '#16a34a', border: 'none', borderRadius: 6, padding: '9px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', transition: 'opacity 0.2s' },
   verifiedNote: { background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)', borderRadius: 10, padding: 14, display: 'flex', gap: 10, alignItems: 'flex-start' },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  modalBox: { background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: '24px', minWidth: 280, maxWidth: 340, width: '90%' },
+  modalHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  modalTitle: { fontSize: 16, fontWeight: 700, color: '#e2e8f0' },
+  modalClose: { background: 'none', border: 'none', color: '#64748b', fontSize: 18, cursor: 'pointer', lineHeight: 1, padding: 0 },
+  modalBody: { display: 'flex', flexDirection: 'column', gap: 8 },
+  shareItem: { display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 16px', color: '#cbd5e1', fontSize: 14, cursor: 'pointer', width: '100%', textAlign: 'left' as const },
+  shareItemIcon: { fontSize: 18, width: 24, textAlign: 'center' as const },
   footer: { padding: '12px 28px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0d1117', flexShrink: 0 },
   footerLink: { fontSize: 11, color: '#334155', cursor: 'pointer' },
 }

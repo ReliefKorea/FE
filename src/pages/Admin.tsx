@@ -30,7 +30,7 @@ export default function Admin() {
         if (cancelled) return
         setEvents(nextEvents)
         setEventsError(null)
-      } catch (_) {
+      } catch {
         if (!cancelled) {
           setEvents([])
           setEventsError('사건 목록을 불러오지 못했습니다')
@@ -69,7 +69,6 @@ export default function Admin() {
 
   return (
     <div style={s.root}>
-      {/* 헤더 */}
       <header style={s.header}>
         <div style={s.headerLeft}>
           <div style={s.logo} onClick={() => navigate('/')}>
@@ -88,13 +87,11 @@ export default function Admin() {
         </div>
       </header>
 
-      {/* 페이지 타이틀 */}
       <div style={s.titleArea}>
         <h1 style={s.pageTitle}>운영 관리 콘솔</h1>
         <p style={s.pageSubtitle}>전 세계 실시간 재난 인시던트를 모니터링하고 데이터를 업데이트합니다.</p>
       </div>
 
-      {/* 통계 카드 */}
       <div style={s.statsRow}>
         {[
           { icon: '⚡', label: '활성 사건', value: stats.active },
@@ -113,7 +110,6 @@ export default function Admin() {
       </div>
 
       <div style={s.body}>
-        {/* 좌측: 사건 목록 */}
         <div style={s.mainCol}>
           <div style={s.listHeader}>
             <div>
@@ -131,7 +127,6 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* 테이블 헤더 */}
           <div style={s.tableHeader}>
             <div style={{ flex: 3 }}>사건 이름 / 지역</div>
             <div style={{ flex: 1 }}>유형</div>
@@ -141,7 +136,6 @@ export default function Admin() {
             <div style={{ flex: 1 }}>관리</div>
           </div>
 
-          {/* 테이블 rows */}
           {isLoadingEvents && (
             <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '32px 0' }}>
               사건 목록을 불러오는 중입니다
@@ -185,9 +179,7 @@ export default function Admin() {
           )}
         </div>
 
-        {/* 우측 패널 */}
         <div style={s.sideCol}>
-          {/* 보안 수칙 */}
           <div style={s.sideCard}>
             <div style={s.sideCardHeader}>
               <span style={s.sideCardTitle}>🛡️ 운영자 보안 수칙</span>
@@ -202,7 +194,6 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* 새 사건 생성 폼 */}
       {tab === 'create' && (
         <div style={s.createForm}>
           <div style={s.formHeader}>
@@ -216,7 +207,6 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* 기본 정보 */}
           <div style={s.formSection}>
             <div style={s.formSectionTitle}>1. 기본 정보 및 지역 설정</div>
             <div style={s.formGrid}>
@@ -253,7 +243,6 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* 뉴스 링크 */}
           <div style={s.formSection}>
             <div style={s.formSectionTitle}>2. 관련 뉴스 및 미디어 링크</div>
             {newEvent.newsLinks.map((link, i) => (
@@ -268,7 +257,6 @@ export default function Admin() {
             <button style={s.addBtn} onClick={() => setNewEvent({ ...newEvent, newsLinks: [...newEvent.newsLinks, ''] })}>+ 뉴스 기사 추가</button>
           </div>
 
-          {/* 구호 단체 */}
           <div style={s.formSection}>
             <div style={s.formSectionTitle}>3. 구호 단체 및 지원 정보</div>
             <div style={s.formGrid}>
@@ -284,7 +272,6 @@ export default function Admin() {
             <button style={s.addBtn}>+ 구호 단체 등록</button>
           </div>
 
-          {/* 제출 */}
           <div style={s.formFooter}>
             <label style={s.checkLabel}>
               <input type="checkbox" checked={newEvent.publishNow} onChange={e => setNewEvent({ ...newEvent, publishNow: e.target.checked })} />

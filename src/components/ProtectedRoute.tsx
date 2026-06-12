@@ -3,8 +3,6 @@ import { Navigate, useLocation } from 'react-router-dom'
 function isTokenValid(token: string | null): boolean {
   if (!token) return false
 
-  // This frontend expiration check is only a navigation helper, not a security boundary.
-  // Backend authorization must verify the JWT signature before trusting its payload.
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
     return payload.exp * 1000 > Date.now()

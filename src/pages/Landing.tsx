@@ -99,7 +99,6 @@ export default function Landing() {
         }
       `}</style>
 
-      {/* 좌측 상단 활성 재난 수 */}
       {activeEventCount !== null && (
         <div style={s.statusBarLeft}>
           <div style={s.statusBadge}>
@@ -112,7 +111,6 @@ export default function Landing() {
         </div>
       )}
 
-      {/* 우측 상단 상태바 */}
       <div style={s.statusBar}>
         <div style={s.statusBadge}>
           <span style={s.statusIcon}>🕐</span>
@@ -130,7 +128,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* 지구본 (뷰포트 중앙 고정) */}
       <div style={s.globeFixed}>
         <div style={s.globeWrapper}>
           <div style={s.globeFilter}>
@@ -175,7 +172,6 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* 소개 패널 — 스크롤하면 아래에서 위로, 반대로 스크롤하면 내려감 */}
       <div style={{
         ...s.introPanel,
         transform: `translateY(${(1 - introProgress) * 100}%)`,

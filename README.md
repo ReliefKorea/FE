@@ -30,9 +30,12 @@ npm run dev
 ```text
 VITE_API_BASE_URL=http://localhost:3000/api
 VITE_ENABLE_MOCK_FALLBACK=true
+VITE_KAKAO_APP_KEY=
 ```
 
 Use `.env.example` for safe placeholders only. Do not commit `.env` or `.env.local`.
+
+`VITE_KAKAO_APP_KEY` is the Kakao Developers JavaScript key used by the event detail KakaoTalk share button. Register local and deployed web domains such as `http://localhost:5173` and `https://reliefkoreafe.vercel.app` in the Kakao app settings.
 
 When `VITE_ENABLE_MOCK_FALLBACK` is not `false`, the frontend falls back to local mock events, reports, organizations, and donation history if the backend API is unavailable. These mock records live only in `src/data/mockData.ts`; they are never written to the backend database.
 

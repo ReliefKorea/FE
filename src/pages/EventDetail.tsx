@@ -8,6 +8,15 @@ import {
 import type { OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } from '../types'
 
 const ARTICLE_REFRESH_INTERVAL_MS = 30000
+const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY
+
+type KakaoSdk = {
+  isInitialized: () => boolean
+  init: (key: string) => void
+  Share: {
+    sendDefault: (opts: object) => void
+  }
+}
 
 const trustConfig = {
   strong: { label: '근거 충분', color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
@@ -62,11 +71,19 @@ export default function EventDetail() {
   }
 
   function handleKakaoShare(title: string) {
-    const kakao = (window as Window & { Kakao?: { isInitialized: () => boolean; init: (key: string) => void; Share: { sendDefault: (opts: object) => void } } }).Kakao
-    if (!kakao) return
-    const appKey = import.meta.env.VITE_KAKAO_APP_KEY
-    if (!appKey) { alert('VITE_KAKAO_APP_KEY가 설정되지 않았습니다'); return }
-    if (!kakao.isInitialized()) kakao.init(appKey)
+    const kakao = (window as Window & { Kakao?: KakaoSdk }).Kakao
+
+    if (!kakao) {
+      alert('카카오 공유 SDK를 불러오지 못했습니다')
+      return false
+    }
+
+    if (!KAKAO_APP_KEY) {
+      alert('VITE_KAKAO_APP_KEY가 설정되지 않았습니다')
+      return false
+    }
+
+    if (!kakao.isInitialized()) kakao.init(KAKAO_APP_KEY)
     kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
@@ -76,6 +93,8 @@ export default function EventDetail() {
         link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
       },
     })
+
+    return true
   }
   const [event, setEvent] = useState<RiskEvent | null>(null)
   const [isLoadingEvent, setIsLoadingEvent] = useState(true)
@@ -149,7 +168,7 @@ export default function EventDetail() {
         if (cancelled) return
         setOfficialUpdates(nextUpdates)
         setUpdatesError(null)
-      } catch (_) {
+      } catch {
         if (!cancelled) {
           setOfficialUpdates([])
           setUpdatesError('공식 리포트를 불러오지 못했습니다')
@@ -189,7 +208,7 @@ export default function EventDetail() {
         if (cancelled) return
         setArticles(nextArticles)
         setArticlesError(null)
-      } catch (_) {
+      } catch {
         if (!cancelled) {
           setArticles([])
           setArticlesError('관련 뉴스를 불러오지 못했습니다')
@@ -238,7 +257,7 @@ export default function EventDetail() {
         if (cancelled) return
         setOrgs(nextOrgs)
         setOrgsError(null)
-      } catch (_) {
+      } catch {
         if (!cancelled) {
           setOrgs([])
           setOrgsError('후원 단체를 불러오지 못했습니다')
@@ -330,7 +349,7 @@ export default function EventDetail() {
           </div>
           <div style={s.titleSummary}>{event.official_summary}</div>
           <div style={s.titleActions}>
-            <button style={s.actionBtn} onClick={() => setShowShareModal(true)}>↗ 공유</button>
+            <button style={s.actionBtn} onClick={() => handleKakaoShare(event.title)}>↗ 공유</button>
           </div>
         </div>
       </div>
@@ -587,7 +606,7 @@ export default function EventDetail() {
                 <span style={s.shareItemIcon}>🔗</span>
                 <span>{copyDone ? '✓ 복사됨!' : '링크 복사'}</span>
               </button>
-              <button style={s.shareItem} onClick={() => { handleKakaoShare(event.title); setShowShareModal(false) }}>
+              <button style={s.shareItem} onClick={() => { if (handleKakaoShare(event.title)) setShowShareModal(false) }}>
                 <span style={s.shareItemIcon}>💬</span>
                 <span>카카오톡 공유</span>
               </button>

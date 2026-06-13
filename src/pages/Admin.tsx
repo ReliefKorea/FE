@@ -10,6 +10,9 @@ export default function Admin() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<TabKey>('list')
   const [searchQuery, setSearchQuery] = useState('')
+  const [severityFilter, setSeverityFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [showFilter, setShowFilter] = useState(false)
   const [events, setEvents] = useState<RiskEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(true)
   const [eventsError, setEventsError] = useState<string | null>(null)
@@ -49,11 +52,12 @@ export default function Admin() {
     }
   }, [])
 
-  const filteredEvents = events.filter(e =>
-    searchQuery === '' ||
-    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.region_name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredEvents = events.filter(e => {
+    if (searchQuery !== '' && !e.title.toLowerCase().includes(searchQuery.toLowerCase()) && !e.region_name.toLowerCase().includes(searchQuery.toLowerCase())) return false
+    if (severityFilter !== 'all' && e.severity !== severityFilter) return false
+    if (typeFilter !== 'all' && e.disaster_type !== typeFilter) return false
+    return true
+  })
 
   const stats = {
     active: events.filter(e => e.status === 'active').length,
@@ -97,7 +101,6 @@ export default function Admin() {
           { icon: '⚡', label: '활성 사건', value: stats.active },
           { icon: '⚠️', label: '고위험 지역', value: `0${stats.highRisk}` },
           { icon: '👥', label: '구호 참여 단체', value: stats.orgs },
-          { icon: '🕐', label: '최근 24시간 업데이트', value: stats.updated },
         ].map((stat, i) => (
           <div key={i} style={s.statCard}>
             <span style={s.statIcon}>{stat.icon}</span>
@@ -116,14 +119,34 @@ export default function Admin() {
               <div style={s.listTitle}>관리 중인 사건 리스트</div>
               <div style={s.listSubtitle}>현재 시스템에 등록된 모든 재난 상황을 관리합니다.</div>
             </div>
-            <div style={s.listControls}>
-              <input
-                style={s.searchInput}
-                placeholder="🔍 사건 이름 검색..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              <button style={s.filterBtn}>필터</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  style={s.searchInput}
+                  placeholder="🔍 사건 이름 검색..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+                <button style={{ ...s.filterBtn, ...(showFilter ? s.filterChipActive : {}) }} onClick={() => setShowFilter(v => !v)}>필터</button>
+              </div>
+              {showFilter && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['all', 'critical', 'high', 'medium', 'low'] as const).map(v => (
+                      <button key={v} style={{ ...s.filterChip, ...(severityFilter === v ? s.filterChipActive : {}) }} onClick={() => setSeverityFilter(v)}>
+                        {v === 'all' ? '전체' : v === 'critical' ? '심각' : v === 'high' ? '높음' : v === 'medium' ? '보통' : '낮음'}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['all', 'typhoon', 'earthquake', 'wildfire'] as const).map(v => (
+                      <button key={v} style={{ ...s.filterChip, ...(typeFilter === v ? s.filterChipActive : {}) }} onClick={() => setTypeFilter(v)}>
+                        {v === 'all' ? '전체' : v === 'typhoon' ? '태풍' : v === 'earthquake' ? '지진' : '산불'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -136,62 +159,51 @@ export default function Admin() {
             <div style={{ flex: 1 }}>관리</div>
           </div>
 
-          {isLoadingEvents && (
-            <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '32px 0' }}>
-              사건 목록을 불러오는 중입니다
-            </div>
-          )}
-          {!isLoadingEvents && eventsError && (
-            <div style={{ fontSize: 13, color: '#fca5a5', textAlign: 'center', padding: '32px 0' }}>
-              {eventsError}
-            </div>
-          )}
-          {!isLoadingEvents && !eventsError && filteredEvents.map(event => {
-            const cfg = severityConfig[event.severity]
-            return (
-              <div key={event.event_id} style={s.tableRow}>
-                <div style={{ flex: 3 }}>
-                  <div style={s.rowTitle}>{event.title}</div>
-                  <div style={s.rowSub}>{event.region_name}</div>
-                </div>
-                <div style={{ flex: 1, fontSize: 12, color: '#64748b' }}>{disasterTypeLabels[event.disaster_type]}</div>
-                <div style={{ flex: 1 }}>
-                  <span style={{ ...s.riskChip, background: cfg.bgColor, color: cfg.color, border: `1px solid ${cfg.color}44` }}>
-                    {cfg.label.toUpperCase()} RISK
-                  </span>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <span style={s.publicChip}>
-                    👁 Public
-                  </span>
-                </div>
-                <div style={{ flex: 1, fontSize: 12, color: '#475569' }}>{timeAgo(event.updated_at)}</div>
-                <div style={{ flex: 1 }}>
-                  <button style={s.editBtn} onClick={() => navigate(`/event/${event.event_id}`)}>수정</button>
-                </div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {isLoadingEvents && (
+              <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '32px 0' }}>
+                사건 목록을 불러오는 중입니다
               </div>
-            )
-          })}
-          {!isLoadingEvents && !eventsError && filteredEvents.length === 0 && (
-            <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '32px 0' }}>
-              표시할 사건이 없습니다
-            </div>
-          )}
-        </div>
-
-        <div style={s.sideCol}>
-          <div style={s.sideCard}>
-            <div style={s.sideCardHeader}>
-              <span style={s.sideCardTitle}>🛡️ 운영자 보안 수칙</span>
-            </div>
-            <ul style={s.ruleList}>
-              <li style={s.ruleItem}>모든 정보는 공식 채널을 통해 확인된 내용만 기재하십시오.</li>
-              <li style={s.ruleItem}>뉴스 링크는 신뢰할 수 있는 언론사의 URL만 허용됩니다.</li>
-              <li style={s.ruleItem}>후원 단계의 경우 공식 등록 번호가 확인된 곳 위주로 생성합니다.</li>
-            </ul>
-            <button style={s.guideBtn}>상세 가이드라인 확인</button>
+            )}
+            {!isLoadingEvents && eventsError && (
+              <div style={{ fontSize: 13, color: '#fca5a5', textAlign: 'center', padding: '32px 0' }}>
+                {eventsError}
+              </div>
+            )}
+            {!isLoadingEvents && !eventsError && filteredEvents.map(event => {
+              const cfg = severityConfig[event.severity]
+              return (
+                <div key={event.event_id} style={s.tableRow}>
+                  <div style={{ flex: 3 }}>
+                    <div style={s.rowTitle}>{event.title}</div>
+                    <div style={s.rowSub}>{event.region_name}</div>
+                  </div>
+                  <div style={{ flex: 1, fontSize: 12, color: '#64748b' }}>{disasterTypeLabels[event.disaster_type]}</div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ ...s.riskChip, background: cfg.bgColor, color: cfg.color, border: `1px solid ${cfg.color}44` }}>
+                      {cfg.label.toUpperCase()} RISK
+                    </span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <span style={s.publicChip}>
+                      👁 Public
+                    </span>
+                  </div>
+                  <div style={{ flex: 1, fontSize: 12, color: '#475569' }}>{timeAgo(event.updated_at)}</div>
+                  <div style={{ flex: 1 }}>
+                    <button style={s.editBtn} onClick={() => navigate(`/event/${event.event_id}`)}>수정</button>
+                  </div>
+                </div>
+              )
+            })}
+            {!isLoadingEvents && !eventsError && filteredEvents.length === 0 && (
+              <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '32px 0' }}>
+                표시할 사건이 없습니다
+              </div>
+            )}
           </div>
         </div>
+
       </div>
 
       {tab === 'create' && (
@@ -294,7 +306,7 @@ export default function Admin() {
 }
 
 const s: Record<string, React.CSSProperties> = {
-  root: { display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#080b14', color: '#e2e8f0', fontFamily: "'Segoe UI', system-ui, sans-serif" },
+  root: { display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#080b14', color: '#e2e8f0', fontFamily: "'Segoe UI', system-ui, sans-serif" },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 56, background: '#0d1117', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 },
   headerLeft: { display: 'flex', alignItems: 'center', gap: 24 },
   logo: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' },
@@ -315,14 +327,16 @@ const s: Record<string, React.CSSProperties> = {
   statIcon: { fontSize: 20 },
   statValue: { fontSize: 22, fontWeight: 700, color: '#e2e8f0', lineHeight: 1 },
   statLabel: { fontSize: 11, color: '#64748b', marginTop: 4 },
-  body: { display: 'flex', flex: 1, gap: 20, padding: '20px 28px', overflow: 'auto' },
-  mainCol: { flex: 1, background: '#0d1117', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden' },
+  body: { display: 'flex', flex: 1, gap: 20, padding: '20px 28px', overflow: 'hidden' },
+  mainCol: { flex: 1, background: '#0d1117', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   listHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' },
   listTitle: { fontSize: 15, fontWeight: 600, color: '#e2e8f0' },
   listSubtitle: { fontSize: 12, color: '#64748b', marginTop: 2 },
   listControls: { display: 'flex', gap: 8 },
   searchInput: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '7px 12px', color: '#e2e8f0', fontSize: 12, outline: 'none', width: 200 },
   filterBtn: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '7px 14px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' },
+  filterChip: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '5px 12px', color: '#64748b', fontSize: 11, cursor: 'pointer' },
+  filterChipActive: { background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.4)', color: '#4ade80' },
   tableHeader: { display: 'flex', padding: '10px 20px', fontSize: 11, color: '#475569', letterSpacing: 0.5, borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 600 },
   tableRow: { display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.15s' },
   rowTitle: { fontSize: 13, fontWeight: 600, color: '#e2e8f0', marginBottom: 2 },

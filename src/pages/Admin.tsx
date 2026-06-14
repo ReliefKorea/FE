@@ -219,6 +219,7 @@ export default function Admin() {
             </div>
           </div>
 
+          <div style={{ overflowY: 'auto', flex: 1 }}>
           <div style={s.formSection}>
             <div style={s.formSectionTitle}>1. 기본 정보 및 지역 설정</div>
             <div style={s.formGrid}>
@@ -284,14 +285,16 @@ export default function Admin() {
             <button style={s.addBtn}>+ 구호 단체 등록</button>
           </div>
 
+          </div>
+
           <div style={s.formFooter}>
             <label style={s.checkLabel}>
               <input type="checkbox" checked={newEvent.publishNow} onChange={e => setNewEvent({ ...newEvent, publishNow: e.target.checked })} />
               &nbsp; 즉시 공개 처리 – 체크 시 저장과 동시에 퍼블릭 지도에 노출됩니다.
             </label>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button style={s.saveDraftBtn}>임시 저장</button>
-              <button style={s.publishBtn}>🚀 사건 배포하기</button>
+              <button style={s.saveDraftBtn} onClick={() => { alert('임시 저장되었습니다.'); setTab('list') }}>임시 저장</button>
+              <button style={s.publishBtn} onClick={() => { alert('사건이 배포되었습니다.'); setTab('list') }}>🚀 사건 배포하기</button>
             </div>
           </div>
         </div>
@@ -356,7 +359,7 @@ const s: Record<string, React.CSSProperties> = {
   ruleList: { paddingLeft: 16, margin: '0 0 12px' },
   ruleItem: { fontSize: 12, color: '#64748b', lineHeight: 1.6, marginBottom: 6 },
   guideBtn: { width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '8px', color: '#64748b', fontSize: 12, cursor: 'pointer' },
-  createForm: { margin: '0 28px 20px', background: '#0d1117', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden' },
+  createForm: { margin: '0 28px 20px', background: '#0d1117', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 220px)' },
   formHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '18px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' },
   formTitle: { fontSize: 16, fontWeight: 700, color: '#e2e8f0', marginBottom: 4 },
   formSubtitle: { fontSize: 12, color: '#64748b' },

@@ -8,6 +8,7 @@ import {
 import type { OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } from '../types'
 
 const ARTICLE_REFRESH_INTERVAL_MS = 30000
+const SUPPORT_CAROUSEL_INTERVAL_MS = 5000
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_APP_KEY
 
 type KakaoSdk = {
@@ -108,6 +109,11 @@ export default function EventDetail() {
   const [orgs, setOrgs] = useState<OrganizationAction[]>([])
   const [isLoadingOrgs, setIsLoadingOrgs] = useState(false)
   const [orgsError, setOrgsError] = useState<string | null>(null)
+  const [supportIndex, setSupportIndex] = useState(0)
+  const [isSupportPaused, setIsSupportPaused] = useState(false)
+  const [isNarrow, setIsNarrow] = useState(() => (
+    typeof window === 'undefined' ? false : window.innerWidth < 900
+  ))
 
   useEffect(() => {
     let cancelled = false
@@ -148,6 +154,23 @@ export default function EventDetail() {
       cancelled = true
     }
   }, [eventId])
+
+  useEffect(() => {
+    if (orgs.length <= 1 || isSupportPaused) return
+
+    const timer = window.setInterval(() => {
+      setSupportIndex(current => (current + 1) % orgs.length)
+    }, SUPPORT_CAROUSEL_INTERVAL_MS)
+
+    return () => window.clearInterval(timer)
+  }, [orgs.length, isSupportPaused])
+
+  useEffect(() => {
+    const handleResize = () => setIsNarrow(window.innerWidth < 900)
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -301,6 +324,20 @@ export default function EventDetail() {
 
   const cfg = severityConfig[event.severity]
   const stCfg = statusConfig[event.status]
+  const activeSupportIndex = orgs.length > 0 ? supportIndex % orgs.length : 0
+  const activeSupportOrg = orgs.length > 0 ? orgs[activeSupportIndex] : null
+  const visibleSupportOrgs = activeSupportOrg ? [activeSupportOrg] : []
+  const showSupportControls = orgs.length > 1
+  const bodyStyle = isNarrow ? { ...s.body, ...s.bodyMobile } : s.body
+  const contentRowStyle = isNarrow ? { ...s.contentRow, ...s.contentRowMobile } : s.contentRow
+  const officialListStyle = isNarrow ? { ...s.officialList, ...s.officialListMobile } : s.officialList
+  const newsColumnStyle = isNarrow ? { ...s.col, ...s.newsColumn, ...s.newsColumnMobile } : { ...s.col, ...s.newsColumn }
+  const sidebarStyle = isNarrow ? { ...s.colRight, ...s.colRightMobile } : s.colRight
+
+  function moveSupportCard(delta: number) {
+    if (orgs.length === 0) return
+    setSupportIndex(current => (current + delta + orgs.length) % orgs.length)
+  }
 
   return (
     <div style={s.root}>
@@ -354,10 +391,10 @@ export default function EventDetail() {
         </div>
       </div>
 
-      {/* 본문 3열 */}
-      <div style={s.body}>
+      {/* 본문 */}
+      <div style={bodyStyle}>
         {/* 1열: 공식 리포트 */}
-        <div style={s.col}>
+        <div style={s.officialColumn}>
           <section style={s.section}>
             <div style={s.sectionHeader}>
               <span style={s.sectionIcon}>🛡️</span>
@@ -366,7 +403,7 @@ export default function EventDetail() {
                 <span style={s.liveDot} />
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={officialListStyle}>
               {isLoadingUpdates && (
                 <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
                   공식 리포트를 불러오는 중입니다
@@ -405,14 +442,15 @@ export default function EventDetail() {
           </section>
         </div>
 
+        <div style={contentRowStyle}>
         {/* 2열: 관련 뉴스 피드 */}
-        <div style={s.col}>
+        <div style={newsColumnStyle}>
           <section style={s.section}>
             <div style={s.sectionHeader}>
               <span style={s.sectionIcon}>🌐</span>
               <span style={s.sectionTitle}>관련 뉴스 피드</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={s.articleList}>
               {isLoadingArticles && (
                 <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
                   관련 뉴스를 불러오는 중입니다
@@ -454,10 +492,25 @@ export default function EventDetail() {
         </div>
 
         {/* 3열: 후원하기 */}
-        <div style={s.colRight}>
+        <div style={sidebarStyle}>
           <div style={s.supportSection}>
             <div style={s.cardLabel}>♡ Support Relief</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}>
+            <div
+              style={s.supportCarousel}
+              onMouseEnter={() => setIsSupportPaused(true)}
+              onMouseLeave={() => setIsSupportPaused(false)}
+            >
+              {showSupportControls && (
+                <button
+                  type="button"
+                  style={{ ...s.supportArrowBtn, left: 0 }}
+                  onClick={() => moveSupportCard(-1)}
+                  aria-label="이전 후원 단체"
+                >
+                  ‹
+                </button>
+              )}
+              <div style={{ ...s.supportList, ...(showSupportControls ? s.supportListWithControls : {}) }}>
               {isLoadingOrgs && (
                 <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
                   후원 단체를 불러오는 중입니다
@@ -468,7 +521,7 @@ export default function EventDetail() {
                   {orgsError}
                 </div>
               )}
-              {!isLoadingOrgs && !orgsError && orgs.map(org => (
+              {!isLoadingOrgs && !orgsError && visibleSupportOrgs.map(org => (
                 <div key={org.org_id} style={s.orgCard}>
                   <div
                     style={s.orgImageWrap}
@@ -487,92 +540,96 @@ export default function EventDetail() {
                     )}
                   </div>
                   <div style={s.orgCardBody}>
-                    {(() => {
-                      const signal = moneySignal(org)
-                      const evidenceCount = org.evidence_sources?.length ?? 0
+                    <div style={s.orgDetails}>
+                      {(() => {
+                        const signal = moneySignal(org)
+                        const evidenceCount = org.evidence_sources?.length ?? 0
 
-                      return (
-                        <div style={{ ...s.moneySignalPanel, borderColor: `${signal.color}33`, background: signal.bg }}>
-                          <div style={s.moneySignalTop}>
-                            <span style={s.moneySignalLabel}>후원금 사용 판단</span>
-                            <strong style={{ ...s.moneySignalValue, color: signal.color }}>{signal.label}</strong>
+                        return (
+                          <div style={{ ...s.moneySignalPanel, borderColor: `${signal.color}33`, background: signal.bg }}>
+                            <div style={s.moneySignalTop}>
+                              <span style={s.moneySignalLabel}>후원금 사용 판단</span>
+                              <strong style={{ ...s.moneySignalValue, color: signal.color }}>{signal.label}</strong>
+                            </div>
+                            <div style={s.moneySignalMeta}>
+                              <span>근거 {evidenceCount}개</span>
+                              <span>채널 {org.donation_link ? '확인' : '없음'}</span>
+                              {typeof org.trust_score === 'number' && <span>점수 {org.trust_score}</span>}
+                            </div>
                           </div>
-                          <div style={s.moneySignalMeta}>
-                            <span>근거 {evidenceCount}개</span>
-                            <span>채널 {org.donation_link ? '확인' : '없음'}</span>
-                            {typeof org.trust_score === 'number' && <span>점수 {org.trust_score}</span>}
-                          </div>
-                        </div>
-                      )
-                    })()}
-                    <div style={s.orgTitleRow}>
-                      <div style={s.orgName}>{org.org_name}</div>
-                      {org.trust_level && (
-                        <span
-                          style={{
-                            ...s.trustBadge,
-                            color: trustConfig[org.trust_level].color,
-                            background: trustConfig[org.trust_level].bg,
-                            border: `1px solid ${trustConfig[org.trust_level].color}44`,
-                          }}
-                        >
-                          {trustConfig[org.trust_level].label}
-                          {typeof org.trust_score === 'number' ? ` ${org.trust_score}` : ''}
-                        </span>
-                      )}
-                    </div>
-                    <div style={s.orgBadges}>
-                      {org.verified_by_admin && (
-                        <span style={s.verifiedBadge}>✓ 공식 채널 확인</span>
-                      )}
-                      {org.ai_report_id && (
-                        <span style={s.aiReportBadge}>AI 근거 리포트</span>
-                      )}
-                      {org.ai_report_id && org.report_generated_at && (
-                        <span style={s.ragRunBadge}>RAG 마지막 실행 {formatDateTime(org.report_generated_at)}</span>
-                      )}
-                    </div>
-                    <p style={s.orgDesc}>{org.report_summary ?? org.ai_message ?? org.activity_summary}</p>
-                    {org.finance_summary && (
-                      <div style={s.reportBlock}>
-                        <div style={s.reportLabel}>돈이 쓰이는 흐름</div>
-                        <div style={s.reportText}>{org.finance_summary}</div>
-                      </div>
-                    )}
-                    {org.risk_notes && (
-                      <div style={s.reportBlock}>
-                        <div style={s.reportLabel}>확인 기준</div>
-                        <div style={s.reportText}>{org.risk_notes}</div>
-                      </div>
-                    )}
-                    {org.evidence_sources && org.evidence_sources.length > 0 && (
-                      <div style={s.evidenceList}>
-                        {org.evidence_sources.slice(0, 3).map((source, index) => (
-                          <a
-                            key={`${source.url}-${index}`}
-                            href={source.url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={s.evidenceLink}
-                            onClick={event => {
-                              if (!source.url) event.preventDefault()
+                        )
+                      })()}
+                      <div style={s.orgTitleRow}>
+                        <div style={s.orgName}>{org.org_name}</div>
+                        {org.trust_level && (
+                          <span
+                            style={{
+                              ...s.trustBadge,
+                              color: trustConfig[org.trust_level].color,
+                              background: trustConfig[org.trust_level].bg,
+                              border: `1px solid ${trustConfig[org.trust_level].color}44`,
                             }}
                           >
-                            근거 {index + 1}: {source.title}
-                          </a>
-                        ))}
+                            {trustConfig[org.trust_level].label}
+                            {typeof org.trust_score === 'number' ? ` ${org.trust_score}` : ''}
+                          </span>
+                        )}
                       </div>
-                    )}
-                    {org.donation_link && (
-                      <a href={org.donation_link} target="_blank" rel="noopener noreferrer" style={s.donateBtn}>
-                        후원하기 ↗
-                      </a>
-                    )}
-                    {org.volunteer_link && (
-                      <a href={org.volunteer_link} target="_blank" rel="noopener noreferrer" style={{ ...s.donateBtn, background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', color: '#4ade80', marginTop: 6 }}>
-                        봉사 신청 ↗
-                      </a>
-                    )}
+                      <div style={s.orgBadges}>
+                        {org.verified_by_admin && (
+                          <span style={s.verifiedBadge}>✓ 공식 채널 확인</span>
+                        )}
+                        {org.ai_report_id && (
+                          <span style={s.aiReportBadge}>AI 근거 리포트</span>
+                        )}
+                        {org.ai_report_id && org.report_generated_at && (
+                          <span style={s.ragRunBadge}>RAG 마지막 실행 {formatDateTime(org.report_generated_at)}</span>
+                        )}
+                      </div>
+                      <p style={s.orgDesc}>{org.report_summary ?? org.ai_message ?? org.activity_summary}</p>
+                      {org.finance_summary && (
+                        <div style={s.reportBlock}>
+                          <div style={s.reportLabel}>돈이 쓰이는 흐름</div>
+                          <div style={s.reportText}>{org.finance_summary}</div>
+                        </div>
+                      )}
+                      {org.risk_notes && (
+                        <div style={s.reportBlock}>
+                          <div style={s.reportLabel}>확인 기준</div>
+                          <div style={s.reportText}>{org.risk_notes}</div>
+                        </div>
+                      )}
+                      {org.evidence_sources && org.evidence_sources.length > 0 && (
+                        <div style={s.evidenceList}>
+                          {org.evidence_sources.slice(0, 3).map((source, index) => (
+                            <a
+                              key={`${source.url}-${index}`}
+                              href={source.url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={s.evidenceLink}
+                              onClick={event => {
+                                if (!source.url) event.preventDefault()
+                              }}
+                            >
+                              근거 {index + 1}: {source.title}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div style={s.orgActions}>
+                      {org.donation_link && (
+                        <a href={org.donation_link} target="_blank" rel="noopener noreferrer" style={s.donateBtn}>
+                          후원하기 ↗
+                        </a>
+                      )}
+                      {org.volunteer_link && (
+                        <a href={org.volunteer_link} target="_blank" rel="noopener noreferrer" style={{ ...s.donateBtn, background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', color: '#4ade80' }}>
+                          봉사 신청 ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -580,6 +637,17 @@ export default function EventDetail() {
                 <div style={{ fontSize: 13, color: '#475569', textAlign: 'center', padding: '24px 0' }}>
                   등록된 후원 단체가 없습니다
                 </div>
+              )}
+              </div>
+              {showSupportControls && (
+                <button
+                  type="button"
+                  style={{ ...s.supportArrowBtn, right: 0 }}
+                  onClick={() => moveSupportCard(1)}
+                  aria-label="다음 후원 단체"
+                >
+                  ›
+                </button>
               )}
             </div>
             <div style={{ ...s.verifiedNote, marginTop: 12, flexShrink: 0 }}>
@@ -590,6 +658,7 @@ export default function EventDetail() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -671,9 +740,18 @@ const s: Record<string, React.CSSProperties> = {
   titleActions: { display: 'flex', gap: 8 },
   actionBtn: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '7px 16px', color: '#94a3b8', fontSize: 12, cursor: 'pointer' },
   actionBtnPrimary: { background: 'rgba(22,163,74,0.2)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: 6, padding: '7px 16px', color: '#4ade80', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
-  body: { display: 'flex', flex: 1, overflow: 'hidden' },
-  col: { flex: 1, overflowY: 'auto', padding: '20px 24px', borderRight: '1px solid rgba(255,255,255,0.07)' },
-  section: {},
+  body: { display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto' },
+  bodyMobile: { overflow: 'auto' },
+  contentRow: { flex: 1, minHeight: 0, display: 'flex', alignItems: 'stretch', overflow: 'hidden' },
+  contentRowMobile: { flexDirection: 'column', overflow: 'visible' },
+  mainColumn: { flex: '2 1 560px', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' },
+  officialColumn: { minHeight: 0, padding: '20px 24px 10px', display: 'flex', flexDirection: 'column' },
+  officialList: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 },
+  officialListMobile: { gridTemplateColumns: '1fr' },
+  col: { flex: '1 1 0', minHeight: 0, overflowY: 'auto', padding: '20px 24px', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column' },
+  newsColumn: { flex: '0 1 65%', width: '65%', boxSizing: 'border-box' },
+  newsColumnMobile: { flex: '1 1 auto', width: '100%', overflowY: 'visible' },
+  section: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
   sectionHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 },
   sectionIcon: { fontSize: 16 },
   sectionTitle: { fontSize: 15, fontWeight: 700, color: '#e2e8f0' },
@@ -685,24 +763,32 @@ const s: Record<string, React.CSSProperties> = {
   officialTitle: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 6 },
   officialSummary: { fontSize: 13, color: '#94a3b8', lineHeight: 1.6, margin: 0 },
   officialLink: { display: 'inline-block', marginTop: 8, fontSize: 12, color: '#4ade80', textDecoration: 'none' },
+  articleList: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 },
   articleCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12, textDecoration: 'none', display: 'flex', gap: 12, alignItems: 'stretch', transition: 'border-color 0.15s' },
   articleThumb: { width: 96, minWidth: 96, aspectRatio: '4 / 3', objectFit: 'cover' as const, borderRadius: 7, background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)' },
-  articleBody: { minWidth: 0, flex: 1 },
+  articleBody: { minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' },
   articleTop: { display: 'flex', justifyContent: 'space-between', marginBottom: 6 },
   articlePublisher: { fontSize: 11, color: '#64748b' },
   articleTime: { fontSize: 11, color: '#475569' },
   articleTitle: { fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginBottom: 6, lineHeight: 1.4 },
-  articleSummary: { fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: 0 },
-  articleReadMore: { fontSize: 11, color: '#4ade80', marginTop: 8 },
-  colRight: { flex: 1, background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, overflow: 'hidden' },
+  articleSummary: { fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: 0, flexGrow: 1 },
+  articleReadMore: { fontSize: 11, color: '#4ade80', marginTop: 'auto', paddingTop: 8 },
+  colRight: { flex: '0 0 35%', width: '35%', height: 'clamp(520px, 68vh, 720px)', maxHeight: 'clamp(520px, 68vh, 720px)', alignSelf: 'flex-start', minWidth: 0, minHeight: 0, boxSizing: 'border-box', background: '#0d1117', borderLeft: '1px solid rgba(255,255,255,0.07)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, overflow: 'hidden' },
+  colRightMobile: { flex: '1 1 auto', width: '100%', height: 'auto', maxHeight: 'none', overflow: 'visible' },
   cardLabel: { fontSize: 11, color: '#64748b', letterSpacing: 1, fontWeight: 600, marginBottom: 10, textTransform: 'uppercase' as const },
-  supportSection: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 },
-  orgCard: { background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, overflow: 'hidden' },
+  supportSection: { flex: 1, height: '100%', maxHeight: '100%', display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0, overflow: 'hidden' },
+  supportCarousel: { position: 'relative', flex: 1, minHeight: 0, display: 'flex', alignItems: 'stretch', overflow: 'hidden' },
+  supportList: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' },
+  supportListWithControls: { padding: '0 34px' },
+  supportArrowBtn: { position: 'absolute', top: '50%', transform: 'translateY(-50%)', zIndex: 1, width: 28, height: 44, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, color: '#94a3b8', fontSize: 28, lineHeight: 1, cursor: 'pointer' },
+  orgCard: { height: '100%', minHeight: 0, background: '#111827', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   orgImageWrap: { position: 'relative', overflow: 'hidden' },
   orgImage: { width: '100%', height: 140, objectFit: 'cover' as const, display: 'block' },
   orgImageOverlay: { position: 'absolute', inset: 0, background: 'rgba(8,11,20,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   orgHistoryBtn: { background: 'rgba(22,163,74,0.25)', border: '1px solid rgba(22,163,74,0.5)', borderRadius: 8, padding: '9px 18px', color: '#bbf7d0', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
-  orgCardBody: { padding: 14 },
+  orgCardBody: { padding: 14, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
+  orgDetails: { flexGrow: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
+  orgActions: { marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 },
   moneySignalPanel: { border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 10px', marginBottom: 10 },
   moneySignalTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
   moneySignalLabel: { fontSize: 10, color: '#94a3b8', fontWeight: 800 },
@@ -715,7 +801,7 @@ const s: Record<string, React.CSSProperties> = {
   aiReportBadge: { fontSize: 10, color: '#93c5fd', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)', borderRadius: 4, padding: '2px 6px' },
   ragRunBadge: { fontSize: 10, color: '#c4b5fd', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: 4, padding: '2px 6px' },
   trustBadge: { flexShrink: 0, fontSize: 10, borderRadius: 4, padding: '3px 6px', fontWeight: 700 },
-  orgDesc: { fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: '0 0 10px' },
+  orgDesc: { maxHeight: 72, overflowY: 'auto', fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: '0 0 10px' },
   reportBlock: { background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '8px 10px', marginBottom: 8 },
   reportLabel: { fontSize: 10, color: '#94a3b8', fontWeight: 700, marginBottom: 4 },
   reportText: { fontSize: 11, color: '#64748b', lineHeight: 1.45 },

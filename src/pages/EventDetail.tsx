@@ -19,43 +19,16 @@ type KakaoSdk = {
   }
 }
 
-const trustConfig = {
-  strong: { label: '근거 충분', color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
-  moderate: { label: '근거 보통', color: '#38bdf8', bg: 'rgba(56,189,248,0.1)' },
-  limited: { label: '근거 제한', color: '#facc15', bg: 'rgba(250,204,21,0.1)' },
-  needs_review: { label: '근거 약함', color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
-} as const
-
-const moneySignalConfig = {
-  strong: { label: '사용처 근거 충분', color: '#4ade80', bg: 'rgba(74,222,128,0.08)' },
-  moderate: { label: '사용처 근거 보통', color: '#38bdf8', bg: 'rgba(56,189,248,0.08)' },
-  limited: { label: '사용처 근거 제한', color: '#facc15', bg: 'rgba(250,204,21,0.08)' },
-  needs_review: { label: '공개 지표 부족', color: '#f97316', bg: 'rgba(249,115,22,0.08)' },
-} as const
-
-function moneySignal(org: OrganizationAction) {
-  const score = org.trust_score ?? 0
-  const evidenceCount = org.evidence_sources?.length ?? 0
-  const hasMoneyUse = Boolean(org.finance_summary)
-
-  if (score >= 75 && evidenceCount >= 2 && hasMoneyUse) return moneySignalConfig.strong
-  if (score >= 60 && evidenceCount >= 1 && hasMoneyUse) return moneySignalConfig.moderate
-  if (score >= 35 && (evidenceCount > 0 || hasMoneyUse)) return moneySignalConfig.limited
-  return moneySignalConfig.needs_review
-}
-
-function formatDateTime(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  return date.toLocaleString('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }) + ' KST'
+function organizationDescription(orgName: string) {
+  if (orgName.includes('희망브리지')) return '재난 피해 이웃을 위한 긴급구호, 구호물품 지원, 피해 복구 모금을 전문적으로 수행하는 재난 구호 단체입니다.'
+  if (orgName.includes('한국해비타트')) return '재난 이후 임시 거처와 주거 복구가 필요한 가정을 돕는 주거 지원 중심의 비영리 단체입니다.'
+  if (orgName.includes('세이브더칠드런')) return '재난 상황에서 아동의 안전, 보호, 교육·생활 회복을 우선 지원하는 국제 아동권리 단체입니다.'
+  if (orgName.includes('월드비전')) return '국내외 재난 취약 가정과 아동을 대상으로 긴급구호와 생계 회복 지원을 이어가는 구호 단체입니다.'
+  if (orgName.includes('유니세프')) return '재난 피해 아동에게 보건, 식수, 영양, 보호 지원을 제공하는 아동 지원 전문 기관입니다.'
+  if (orgName.includes('사랑의열매') || orgName.includes('사회복지공동모금회')) return '공식 모금과 배분 체계를 통해 재난 피해 지역의 복지 지원과 회복 사업을 돕는 모금 기관입니다.'
+  if (orgName.includes('굿네이버스')) return '재난 피해 아동과 지역사회를 대상으로 긴급 생계, 심리, 교육 회복을 지원하는 국제구호개발 단체입니다.'
+  if (orgName.includes('밀알복지재단')) return '장애인과 취약계층을 포함한 재난 취약 가정의 생활 안정과 회복을 지원하는 복지 재단입니다.'
+  return '재난 피해 지역의 회복과 취약계층 지원을 위해 후원과 봉사 활동을 연결하는 단체입니다.'
 }
 
 export default function EventDetail() {
@@ -541,64 +514,16 @@ export default function EventDetail() {
                   </div>
                   <div style={s.orgCardBody}>
                     <div style={s.orgDetails}>
-                      {(() => {
-                        const signal = moneySignal(org)
-                        const evidenceCount = org.evidence_sources?.length ?? 0
-
-                        return (
-                          <div style={{ ...s.moneySignalPanel, borderColor: `${signal.color}33`, background: signal.bg }}>
-                            <div style={s.moneySignalTop}>
-                              <span style={s.moneySignalLabel}>후원금 사용 판단</span>
-                              <strong style={{ ...s.moneySignalValue, color: signal.color }}>{signal.label}</strong>
-                            </div>
-                            <div style={s.moneySignalMeta}>
-                              <span>근거 {evidenceCount}개</span>
-                              <span>채널 {org.donation_link ? '확인' : '없음'}</span>
-                              {typeof org.trust_score === 'number' && <span>점수 {org.trust_score}</span>}
-                            </div>
-                          </div>
-                        )
-                      })()}
                       <div style={s.orgTitleRow}>
                         <div style={s.orgName}>{org.org_name}</div>
-                        {org.trust_level && (
-                          <span
-                            style={{
-                              ...s.trustBadge,
-                              color: trustConfig[org.trust_level].color,
-                              background: trustConfig[org.trust_level].bg,
-                              border: `1px solid ${trustConfig[org.trust_level].color}44`,
-                            }}
-                          >
-                            {trustConfig[org.trust_level].label}
-                            {typeof org.trust_score === 'number' ? ` ${org.trust_score}` : ''}
-                          </span>
-                        )}
                       </div>
                       <div style={s.orgBadges}>
                         {org.verified_by_admin && (
                           <span style={s.verifiedBadge}>✓ 공식 채널 확인</span>
                         )}
-                        {org.ai_report_id && (
-                          <span style={s.aiReportBadge}>AI 근거 리포트</span>
-                        )}
-                        {org.ai_report_id && org.report_generated_at && (
-                          <span style={s.ragRunBadge}>RAG 마지막 실행 {formatDateTime(org.report_generated_at)}</span>
-                        )}
                       </div>
+                      <p style={s.orgIntro}>{organizationDescription(org.org_name)}</p>
                       <p style={s.orgDesc}>{org.report_summary ?? org.ai_message ?? org.activity_summary}</p>
-                      {org.finance_summary && (
-                        <div style={s.reportBlock}>
-                          <div style={s.reportLabel}>돈이 쓰이는 흐름</div>
-                          <div style={s.reportText}>{org.finance_summary}</div>
-                        </div>
-                      )}
-                      {org.risk_notes && (
-                        <div style={s.reportBlock}>
-                          <div style={s.reportLabel}>확인 기준</div>
-                          <div style={s.reportText}>{org.risk_notes}</div>
-                        </div>
-                      )}
                       {org.evidence_sources && org.evidence_sources.length > 0 && (
                         <div style={s.evidenceList}>
                           {org.evidence_sources.slice(0, 3).map((source, index) => (
@@ -612,7 +537,7 @@ export default function EventDetail() {
                                 if (!source.url) event.preventDefault()
                               }}
                             >
-                              근거 {index + 1}: {source.title}
+                              {source.title}
                             </a>
                           ))}
                         </div>
@@ -789,22 +714,12 @@ const s: Record<string, React.CSSProperties> = {
   orgCardBody: { padding: 14, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
   orgDetails: { flexGrow: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
   orgActions: { marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 },
-  moneySignalPanel: { border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 10px', marginBottom: 10 },
-  moneySignalTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
-  moneySignalLabel: { fontSize: 10, color: '#94a3b8', fontWeight: 800 },
-  moneySignalValue: { fontSize: 12, fontWeight: 900, textAlign: 'right' },
-  moneySignalMeta: { display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 10, color: '#64748b' },
   orgTitleRow: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
   orgName: { fontSize: 13, fontWeight: 600, color: '#e2e8f0' },
   orgBadges: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 },
   verifiedBadge: { fontSize: 10, color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: 4, padding: '2px 6px' },
-  aiReportBadge: { fontSize: 10, color: '#93c5fd', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)', borderRadius: 4, padding: '2px 6px' },
-  ragRunBadge: { fontSize: 10, color: '#c4b5fd', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.18)', borderRadius: 4, padding: '2px 6px' },
-  trustBadge: { flexShrink: 0, fontSize: 10, borderRadius: 4, padding: '3px 6px', fontWeight: 700 },
+  orgIntro: { fontSize: 12, color: '#94a3b8', lineHeight: 1.5, margin: '0 0 10px' },
   orgDesc: { maxHeight: 72, overflowY: 'auto', fontSize: 12, color: '#64748b', lineHeight: 1.5, margin: '0 0 10px' },
-  reportBlock: { background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '8px 10px', marginBottom: 8 },
-  reportLabel: { fontSize: 10, color: '#94a3b8', fontWeight: 700, marginBottom: 4 },
-  reportText: { fontSize: 11, color: '#64748b', lineHeight: 1.45 },
   evidenceList: { display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 },
   evidenceLink: { fontSize: 11, color: '#818cf8', textDecoration: 'none', lineHeight: 1.35, overflowWrap: 'anywhere' },
   donateBtn: { display: 'block', textAlign: 'center', background: '#16a34a', border: 'none', borderRadius: 6, padding: '9px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', transition: 'opacity 0.2s' },

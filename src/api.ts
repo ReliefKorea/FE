@@ -71,7 +71,14 @@ export async function getEventUpdates(eventId: string): Promise<OfficialUpdate[]
 
   try {
     const updates = await fetchJson<OfficialUpdate[]>(`/events/${encodeURIComponent(eventId)}/updates`)
-    return updates.length > 0 || !hasMockEvent ? updates : mockItems
+    if (!hasMockEvent) return updates
+
+    const seen = new Set<string>()
+    return [...updates, ...mockItems].filter(update => {
+      if (seen.has(update.update_id)) return false
+      seen.add(update.update_id)
+      return true
+    })
   } catch {
     if (hasMockEvent) return mockItems
     throw new Error('Failed to fetch event updates')

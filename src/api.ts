@@ -39,6 +39,12 @@ const ORGANIZATION_IMAGE_FALLBACKS = [
   `https://images.unsplash.com/photo-1593113598332-cd288d649433${IMAGE_PARAMS}`,
   `https://images.unsplash.com/photo-1532629345422-7515f3d16bb6${IMAGE_PARAMS}`,
 ]
+const DONATION_USE_CASE_FALLBACKS = {
+  wildfire: ['임시 대피소', '식수와 생필품', '따뜻한 의류', '주거 복구 장비'],
+  earthquake: ['안전한 대피 공간', '의료 물품', '긴급 생활 물품', '주거 안전 점검'],
+  typhoon: ['깨끗한 물', '위생용품', '식료품 키트', '침수 주거 복구'],
+  heavy_rain: ['깨끗한 물', '마른 옷', '식료품 키트', '침수 주거 복구'],
+} as const
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, NO_STORE)
@@ -101,6 +107,44 @@ function normalizeOrganizations(organizations: OrganizationAction[]) {
       image_alt: organization.image_alt || `${organization.org_name} 구호 활동 이미지`,
     }
   })
+}
+
+function normalizeOrganizationForPage(organization: OrganizationAction) {
+  const event = mockEvents.find(item => item.event_id === organization.event_id)
+  const category = organization.category ?? event?.disaster_type
+  const generatedAt = organization.last_ragged_at
+    ?? organization.report_generated_at
+    ?? organization.last_checked_at
+  const generatedAtTimestamp = generatedAt ? new Date(generatedAt).getTime() : Number.NaN
+  const fallbackExpiresAt = Number.isFinite(generatedAtTimestamp)
+    ? new Date(generatedAtTimestamp + 72 * 60 * 60 * 1000).toISOString()
+    : undefined
+  const withMetadata: OrganizationAction = {
+    ...organization,
+    category,
+    region: organization.region ?? event?.region_name ?? organization.activity_region,
+    is_mock_category_recommendation: organization.is_mock_category_recommendation ?? Boolean(event),
+    summary: organization.summary
+      ?? organization.report_summary
+      ?? organization.ai_message
+      ?? organization.activity_summary,
+    activities: organization.activities?.length
+      ? organization.activities
+      : [organization.activity_type, organization.activity_summary].filter(Boolean),
+    donation_use_cases: organization.donation_use_cases?.length
+      ? organization.donation_use_cases
+      : category ? [...DONATION_USE_CASE_FALLBACKS[category]] : [],
+    official_url: organization.official_url
+      ?? organization.donation_link
+      ?? organization.volunteer_link,
+    source_urls: organization.source_urls?.length
+      ? organization.source_urls
+      : organization.evidence_sources?.map(source => source.url).filter(Boolean) ?? [],
+    last_ragged_at: generatedAt,
+    expires_at: organization.expires_at ?? fallbackExpiresAt,
+  }
+
+  return normalizeOrganizations([withMetadata])[0]
 }
 
 export async function getEvents(): Promise<RiskEvent[]> {
@@ -215,9 +259,10 @@ export async function getOrg(orgId: string): Promise<OrganizationAction> {
   const mockOrganization = mockOrganizations.find(organization => organization.org_id === orgId)
 
   try {
-    return await fetchJson<OrganizationAction>(`/orgs/${encodeURIComponent(orgId)}`)
+    const organization = await fetchJson<OrganizationAction>(`/orgs/${encodeURIComponent(orgId)}`)
+    return normalizeOrganizationForPage(organization)
   } catch {
-    if (mockOrganization) return mockOrganization
+    if (mockOrganization) return normalizeOrganizationForPage(mockOrganization)
 
     throw new Error('Organization not found')
   }

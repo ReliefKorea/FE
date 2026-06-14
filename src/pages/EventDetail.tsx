@@ -4,6 +4,7 @@ import { getEvent, getEventArticles, getEventMedia, getEventOrganizations, getEv
 import { mockEvents, severityConfig, statusConfig, timeAgo } from '../data/mockData'
 import type { EventMedia, OfficialUpdate, OrganizationAction, RelatedArticle, RiskEvent } from '../types'
 import { AppHeader } from '../components/DesignSystem'
+import { disasterImageFor } from '../utils/disasterMedia'
 import './EventDetail.css'
 
 const ARTICLE_REFRESH_INTERVAL_MS = 30000
@@ -14,28 +15,24 @@ const categoryContent = {
     emotionalCopy: '집을 떠나 대피한 가족에게 오늘 밤 머물 곳과 다시 시작할 생활 기반이 필요합니다.',
     cta: '산불 피해 주민 돕기',
     needs: ['임시 거처', '식수와 생필품', '주거 복구', '심리 회복'],
-    fallbackImage: 'https://images.unsplash.com/photo-1523712999610-f77fbcfc3843?auto=format&fit=crop&w=1800&q=84',
   },
   earthquake: {
     eyebrow: '지진 긴급구호',
     emotionalCopy: '무너진 일상 속에서도 다시 일어설 수 있도록, 지금의 차분하고 지속적인 지원이 필요합니다.',
     cta: '지진 피해 주민 돕기',
     needs: ['안전한 대피 공간', '긴급 생활 물품', '주거 안전 점검', '지역 복구'],
-    fallbackImage: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1800&q=84',
   },
   typhoon: {
     eyebrow: '태풍 긴급구호',
     emotionalCopy: '젖은 옷과 차가운 바닥 위에서 밤을 보내는 이들에게 따뜻한 도움과 안전한 쉼터가 필요합니다.',
     cta: '태풍 피해 주민 돕기',
     needs: ['대피소 물품', '식수와 위생용품', '긴급 생계', '침수 주거 복구'],
-    fallbackImage: 'https://images.unsplash.com/photo-1428592953211-077101b2021b?auto=format&fit=crop&w=1800&q=84',
   },
   heavy_rain: {
     eyebrow: '호우 긴급구호',
     emotionalCopy: '젖은 옷과 차가운 바닥 위에서 밤을 보내는 이들에게 따뜻한 도움과 안전한 쉼터가 필요합니다.',
     cta: '수해 피해 주민 돕기',
     needs: ['대피소 물품', '식수와 위생용품', '긴급 생계', '침수 주거 복구'],
-    fallbackImage: 'https://images.unsplash.com/photo-1428592953211-077101b2021b?auto=format&fit=crop&w=1800&q=84',
   },
 } as const
 
@@ -60,9 +57,8 @@ function formatDateTime(value: string) {
 }
 
 function mediaFallback(event: RiskEvent): EventMedia {
-  const content = categoryContent[event.disaster_type]
   return {
-    image_url: content.fallbackImage,
+    image_url: disasterImageFor(event),
     image_alt: `${event.title} 관련 구호 활동 이미지`,
     image_source_name: '카테고리 기본 이미지',
     image_source_url: 'https://unsplash.com',
@@ -338,7 +334,7 @@ export default function EventDetail() {
                       org={featuredOrganization}
                       heroImage={heroMedia.image_url}
                       cta={content.cta}
-                      onHistory={orgId => navigate(`/org/${orgId}/history`)}
+                      onInfo={orgId => navigate(`/org/${orgId}/info`)}
                       featured
                     />
                   )}
@@ -359,7 +355,7 @@ export default function EventDetail() {
                       org={org}
                       heroImage={heroMedia.image_url}
                       cta={content.cta}
-                      onHistory={orgId => navigate(`/org/${orgId}/history`)}
+                      onInfo={orgId => navigate(`/org/${orgId}/info`)}
                     />
                   ))}
                 </div>
@@ -398,13 +394,13 @@ function OrganizationCard({
   org,
   heroImage,
   cta,
-  onHistory,
+  onInfo,
   featured = false,
 }: {
   org: OrganizationAction
   heroImage: string
   cta: string
-  onHistory: (orgId: string) => void
+  onInfo: (orgId: string) => void
   featured?: boolean
 }) {
   return (
@@ -426,7 +422,7 @@ function OrganizationCard({
           </div>
         )}
         <div className="organization-footer">
-          <button type="button" onClick={() => onHistory(org.org_id)}>근거와 활동 보기</button>
+          <button type="button" onClick={() => onInfo(org.org_id)}>구호 정보 보기</button>
           {org.donation_link && (
             <a className="donate-action" href={org.donation_link} target="_blank" rel="noreferrer">
               <span>{cta}</span><b>→</b>

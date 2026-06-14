@@ -75,12 +75,6 @@ export interface DonationRecord {
   evidence_source?: string
 }
 
-export interface OrgEvidenceSource {
-  title: string
-  url: string
-  source_type: 'official_site' | 'official_report' | 'news' | 'other'
-}
-
 export interface OrganizationAction {
   org_id: string
   event_id: string

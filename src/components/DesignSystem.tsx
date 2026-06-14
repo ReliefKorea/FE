@@ -22,7 +22,9 @@ export function AppHeader({
         <button className={active === 'map' ? 'is-active' : ''} type="button" onClick={() => navigate('/map')}>재난 라이브맵</button>
         <button className={active === 'admin' ? 'is-active' : ''} type="button" onClick={() => navigate('/admin')}>운영 콘솔</button>
       </nav>
-      <div className="rk-live-alert">진행 중 재난 {activeAlerts ?? 0}건</div>
+      {typeof activeAlerts === 'number'
+        ? <div className="rk-live-alert">진행 중 재난 {activeAlerts}건</div>
+        : <div />}
     </header>
   )
 }

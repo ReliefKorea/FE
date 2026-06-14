@@ -8,18 +8,12 @@ import { getEvents } from '../api'
 import { AppHeader, EmptyState, SeverityBadge, SkeletonCard, StatusBadge } from '../components/DesignSystem'
 import { disasterTypeIcons, disasterTypeLabels, severityConfig, timeAgo } from '../data/mockData'
 import type { DisasterType, RiskEvent, Severity } from '../types'
+import { disasterImageFor } from '../utils/disasterMedia'
 import './MapMain.css'
 
 const EVENT_REFRESH_INTERVAL_MS = 30000
 const SEVERITY_ORDER: Record<Severity, number> = { critical: 4, high: 3, medium: 2, low: 1 }
 const MARKER_SIZE: Record<Severity, number> = { critical: 50, high: 46, medium: 42, low: 38 }
-
-const DISASTER_IMAGES: Record<string, string> = {
-  wildfire: 'https://images.unsplash.com/photo-1523712999610-f77fbcfc3843?auto=format&fit=crop&w=700&q=80',
-  typhoon: 'https://images.unsplash.com/photo-1428592953211-077101b2021b?auto=format&fit=crop&w=700&q=80',
-  earthquake: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=700&q=80',
-  heavy_rain: 'https://images.unsplash.com/photo-1500674425229-f692875b0ab7?auto=format&fit=crop&w=700&q=80',
-}
 
 const CATEGORIES: { key: DisasterType | 'all'; label: string; icon: string }[] = [
   { key: 'all', label: '전체 재난', icon: '⌖' },
@@ -234,7 +228,7 @@ export default function MapMain() {
                     >
                       <Tooltip className="event-map-tooltip" direction="top" offset={[0, -24]} opacity={1}>
                         <div className="map-tooltip-card">
-                          <img src={DISASTER_IMAGES[event.disaster_type]} alt="" />
+                          <img src={disasterImageFor(event)} alt="" />
                           <div>
                             <strong>{event.title}</strong>
                             <span>{event.region_name}</span>
@@ -333,7 +327,7 @@ function SelectedEventCard({
   return (
     <div className="selected-event">
       <div className="selected-event-image">
-        <img src={DISASTER_IMAGES[event.disaster_type]} alt="" />
+        <img src={disasterImageFor(event)} alt="" />
         <button type="button" onClick={onClose} aria-label="선택 닫기">×</button>
       </div>
       <div className="selected-event-body">

@@ -446,17 +446,17 @@ export const disasterTypeIcons: Record<string, string> = {
 }
 
 export const severityConfig: Record<string, { label: string; color: string; bgColor: string; dotColor: string }> = {
-  low:      { label: '낮음', color: '#facc15', bgColor: 'rgba(250,204,21,0.15)',  dotColor: '#facc15' },
-  medium:   { label: '보통', color: '#fb923c', bgColor: 'rgba(251,146,60,0.15)',  dotColor: '#fb923c' },
-  high:     { label: '높음', color: '#f87171', bgColor: 'rgba(248,113,113,0.15)', dotColor: '#f87171' },
-  critical: { label: '심각', color: '#c084fc', bgColor: 'rgba(192,132,252,0.15)', dotColor: '#c084fc' },
+  low:      { label: '낮음', color: '#3186a7', bgColor: '#e5f3f7', dotColor: '#3186a7' },
+  medium:   { label: '보통', color: '#b47a16', bgColor: '#fff3d9', dotColor: '#b47a16' },
+  high:     { label: '높음', color: '#c25d38', bgColor: '#fde9df', dotColor: '#c25d38' },
+  critical: { label: '심각', color: '#ad4050', bgColor: '#fbe5e8', dotColor: '#ad4050' },
 }
 
 export const statusConfig: Record<string, { label: string; color: string }> = {
-  active:     { label: '진행중', color: '#f87171' },
-  monitoring: { label: '모니터링', color: '#fb923c' },
-  recovery:   { label: '복구중', color: '#4ade80' },
-  closed:     { label: '종료', color: '#94a3b8' },
+  active:     { label: '진행중', color: '#ad4050' },
+  monitoring: { label: '모니터링', color: '#b47a16' },
+  recovery:   { label: '복구중', color: '#0f8a67' },
+  closed:     { label: '종료', color: '#60747b' },
 }
 
 export function timeAgo(dateStr: string): string {

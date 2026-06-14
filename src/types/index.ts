@@ -26,6 +26,17 @@ export interface RiskEvent {
   source_confidence: 'verified' | 'monitoring' | 'unconfirmed'
 }
 
+export interface EventMedia {
+  image_url: string
+  image_alt: string
+  image_source_name: string
+  image_source_url?: string
+  query?: string
+  is_fallback: boolean
+  fetched_at: string
+  expires_at: string
+}
+
 export interface OfficialUpdate {
   update_id: string
   event_id: string
@@ -91,4 +102,17 @@ export interface OrganizationAction {
   risk_notes?: string
   evidence_sources?: EvidenceSource[]
   report_generated_at?: string
+  category?: DisasterType
+  region?: string
+  summary?: string
+  activities?: string[]
+  donation_use_cases?: string[]
+  official_url?: string
+  image_url?: string
+  image_alt?: string
+  image_source_url?: string
+  source_urls?: string[]
+  last_ragged_at?: string
+  expires_at?: string
+  is_mock_category_recommendation?: boolean
 }

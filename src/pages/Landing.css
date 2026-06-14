@@ -36,6 +36,12 @@
   font-style: normal;
 }
 
+.landing-hero-nowrap {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: clamp(28px, 4vw, 54px);
+}
+
 .landing-hero-copy > p {
   max-width: 650px;
   margin: 0;
@@ -408,6 +414,10 @@
 
   .landing-hero h1 {
     font-size: clamp(42px, 13vw, 62px);
+  }
+
+  .landing-hero-nowrap {
+    font-size: clamp(34px, 10.5vw, 50px);
   }
 
   .landing-hero-copy > p {

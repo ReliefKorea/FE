@@ -61,9 +61,8 @@ export default function Landing() {
           <div className="landing-hero-copy">
             <span className="rk-eyebrow">재난 정보에서 실제 도움까지</span>
             <h1>
-              도움이 필요한 순간,<br />
-              <em>마음이 길을 잃지</em><br />
-              <em>않도록.</em>
+              <span className="landing-hero-nowrap">도움이 필요한 순간,</span><br />
+              <em className="landing-hero-nowrap">마음이 길을 잃지 않도록</em>
             </h1>
             <p>
               지금 한국에서 발생한 재난을 한눈에 확인하고, 공식 정보와 검증 가능한 지원 방법을 따라

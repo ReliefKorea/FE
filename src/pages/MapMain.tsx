@@ -286,13 +286,13 @@ export default function MapMain() {
         }
         .leaflet-container { background: #0d1117; }
         .leaflet-popup-content-wrapper {
-          background: #111827;
+          background: #1c2535;
           border: 1px solid rgba(255,255,255,0.1);
           border-radius: 10px;
           color: #e2e8f0;
           box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-        .leaflet-popup-tip { background: #111827; }
+        .leaflet-popup-tip { background: #1c2535; }
         .leaflet-popup-close-button { color: #64748b !important; }
         .leaflet-control-zoom a {
           background: #0d1117 !important;
@@ -663,7 +663,7 @@ const s: Record<string, React.CSSProperties> = {
   headerRight: { display: 'flex', alignItems: 'center', gap: 12 },
   liveAlert: { display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, padding: '5px 12px', fontSize: 12, color: '#fca5a5', fontWeight: 600 },
   liveDot: { width: 7, height: 7, borderRadius: '50%', background: '#ef4444', display: 'inline-block', boxShadow: '0 0 6px #ef4444' },
-  avatar: { width: 32, height: 32, borderRadius: '50%', background: '#1e293b', border: '2px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 },
+  avatar: { width: 32, height: 32, borderRadius: '50%', background: '#1c2535', border: '2px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 },
   body: { display: 'flex', flex: 1, overflow: 'hidden' },
   sidebar: { width: 220, background: '#0d1117', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', padding: '16px 0', flexShrink: 0, overflowY: 'auto' },
   sidebarSection: { fontSize: 10, color: '#475569', letterSpacing: 2, padding: '0 20px 10px', fontWeight: 600 },
@@ -703,12 +703,12 @@ const s: Record<string, React.CSSProperties> = {
   alertMeta: { display: 'flex', gap: 12, fontSize: 11, color: '#475569', marginBottom: 6 },
   alertSummary: { fontSize: 11, color: '#64748b', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
   regionTitle: { fontSize: 22, fontWeight: 700, color: '#e2e8f0', padding: '16px 0 12px' },
-  regionStats: { background: '#111827', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 14, marginBottom: 16 },
+  regionStats: { background: '#1c2535', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 14, marginBottom: 16 },
   statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   statLabel: { fontSize: 12, color: '#64748b' },
   statValue: { fontSize: 13, fontWeight: 700 },
   ongoingLabel: { fontSize: 10, color: '#475569', letterSpacing: 2, marginBottom: 10, fontWeight: 600 },
-  incidentRow: { display: 'flex', alignItems: 'center', gap: 10, background: '#111827', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', marginBottom: 16, cursor: 'pointer' },
+  incidentRow: { display: 'flex', alignItems: 'center', gap: 10, background: '#1c2535', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', marginBottom: 16, cursor: 'pointer' },
   incidentTitle: { fontSize: 13, fontWeight: 600, color: '#e2e8f0' },
   incidentSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
   emergencyBtn: { width: '100%', background: '#16a34a', border: 'none', borderRadius: 8, padding: '12px', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', letterSpacing: 0.3 },
@@ -726,5 +726,5 @@ const s: Record<string, React.CSSProperties> = {
   epRowText: { color: '#94a3b8', lineHeight: 1.6 },
   epHelpBadge: { fontSize: 12, padding: '4px 10px', borderRadius: 20, background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)', fontWeight: 600 },
   epDetailBtn: { marginTop: 14, background: 'none', border: 'none', color: '#4ade80', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 },
-  cardImgBox: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  cardImgBox: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#1c2535', display: 'flex', alignItems: 'center', justifyContent: 'center' },
 }
